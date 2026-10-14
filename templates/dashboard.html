@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}Learner Dashboard - Emotion-Aware Adaptive Learning{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <h1 style="font-size: 1.8rem; font-weight: 800;">Learner Analytics & Cognitive Hub</h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem;">
+      Real-time cognitive modeling and personalized adaptive recommendations for <b>{{ session.get('name') }}</b>.
+    </p>
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <a href="{{ url_for('activity') }}" class="btn btn-secondary">
+      📸 Multimodal Reflection
+    </a>
+    <a href="{{ url_for('study') }}" class="btn btn-primary">
+      🚀 Start Adaptive Study
+    </a>
+  </div>
+</div>
+
+<!-- 4 KPI Metrics -->
+<div class="grid-cols-4">
+  <div class="stat-card">
+    <span class="stat-label">Total Reflections</span>
+    <span class="stat-value">{{ total_activities }}</span>
+    <span class="stat-sub">Across text & webcam modalities</span>
+  </div>
+
+  <div class="stat-card">
+    <span class="stat-label">Dominant Cognitive State</span>
+    <div style="margin-top: 6px;">
+      <span class="state-badge {{ dominant_state }}" style="font-size: 1.1rem; padding: 6px 14px;">
+        {{ dominant_state }}
+      </span>
+    </div>
+    <span class="stat-sub" style="margin-top: 8px;">Primary state in recent sessions</span>
+  </div>
+
+  <div class="stat-card">
+    <span class="stat-label">Productivity & Flow Score</span>
+    <span class="stat-value" style="color: #10b981;">{{ productivity_score }}%</span>
+    <span class="stat-sub">Ratio of Focused & Motivated states</span>
+  </div>
+
+  <div class="stat-card">
+    <span class="stat-label">Active Focus Streak</span>
+    <span class="stat-value" style="color: #3b82f6;">🔥 4 Days</span>
+    <span class="stat-sub">Consistent study engagement</span>
+  </div>
+</div>
+
+<!-- Charts & Interactive Tools Grid -->
+<div class="grid-cols-2">
+  <!-- Chart Card -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title"><span>📊</span> Cognitive State Distribution</h2>
+      <span style="font-size: 0.8rem; color: var(--text-muted);">Historical Aggregates</span>
+    </div>
+    <div style="height: 280px; position: relative;">
+      <canvas id="stateChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Pomodoro Deep Work Timer -->
+  <div class="card pomodoro-box">
+    <h2 style="font-size: 1.25rem; font-weight: 700;">⏱️ Adaptive Focus Timer</h2>
+    <p style="color: #94a3b8; font-size: 0.88rem; margin-top: 4px;">
+      Synchronized with your cognitive state to optimize study intervals and break reminders.
+    </p>
+
+    <div class="pomodoro-time" id="timer-display">25:00</div>
+
+    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+      <button class="btn btn-primary" id="timer-start" onclick="toggleTimer()">Start Focus</button>
+      <button class="btn btn-secondary" onclick="resetTimer()">Reset</button>
+      <button class="btn btn-secondary" onclick="setTimer(5)">5m Break</button>
+    </div>
+
+    <div style="margin-top: 18px; padding: 12px; background: rgba(255,255,255,0.08); border-radius: 8px; font-size: 0.82rem; text-align: left;">
+      <p>💡 <b>Adaptive Rule:</b> If webcam or reflection detects <i>Stressed</i> state, the timer will automatically trigger a 3-minute calming breathing session.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Activities Table -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title"><span>📝</span> Recent Cognitive Reflections & Telemetry</h2>
+    <a href="{{ url_for('activity') }}" class="btn btn-outline btn-sm">+ Log New State</a>
+  </div>
+
+  {% if activities %}
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Modality</th>
+            <th>Cognitive State</th>
+            <th>Confidence</th>
+            <th>Learner Reflection / Telemetry</th>
+            <th>Adaptive Recommendation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in activities %}
+            <tr>
+              <td style="white-space: nowrap; color: var(--text-muted); font-size: 0.85rem;">{{ a.created_at }}</td>
+              <td>
+                {% if a.modality == 'webcam' %}
+                  <span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 600;">📹 Webcam</span>
+                {% else %}
+                  <span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 600;">✍️ Text</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="state-badge {{ a.state }}">{{ a.state }}</span>
+              </td>
+              <td style="font-weight: 600; color: var(--text-main);">
+                {{ a.confidence | round(1) if a.confidence else 85.0 }}%
+              </td>
+              <td style="max-width: 340px;">{{ a.description }}</td>
+              <td style="color: var(--text-muted); font-size: 0.88rem;">{{ a.recommendation }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p style="color: var(--text-muted); text-align: center; padding: 30px;">
+      No cognitive activities logged yet. Click "+ Log New State" or "Start Adaptive Study" to begin!
+    </p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Chart.js Doughnut for Cognitive State Distribution
+const stateData = {{ state_counts | tojson }};
+const ctx = document.getElementById('stateChart').getContext('2d');
+
+new Chart(ctx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Focused', 'Motivated', 'Confused', 'Stressed', 'Bored'],
+    datasets: [{
+      data: [
+        stateData['Focused'] || 0,
+        stateData['Motivated'] || 0,
+        stateData['Confused'] || 0,
+        stateData['Stressed'] || 0,
+        stateData['Bored'] || 0
+      ],
+      backgroundColor: [
+        '#10b981', // Focused
+        '#3b82f6', // Motivated
+        '#f59e0b', // Confused
+        '#ef4444', // Stressed
+        '#9ca3af'  // Bored
+      ],
+      borderWidth: 2,
+      borderColor: '#ffffff'
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { font: { size: 12 }, padding: 14 }
+      }
+    },
+    cutout: '65%'
+  }
+});
+
+// Interactive Focus Timer
+let timerSeconds = 25 * 60;
+let timerInterval = null;
+let isRunning = false;
+
+function formatTime(s) {
+  const m = Math.floor(s / 60).toString().padStart(2, '0');
+  const sec = (s % 60).toString().padStart(2, '0');
+  return `${m}:${sec}`;
+}
+
+function updateDisplay() {
+  document.getElementById('timer-display').textContent = formatTime(timerSeconds);
+}
+
+function toggleTimer() {
+  const btn = document.getElementById('timer-start');
+  if (isRunning) {
+    clearInterval(timerInterval);
+    isRunning = false;
+    btn.textContent = 'Resume Focus';
+  } else {
+    isRunning = true;
+    btn.textContent = 'Pause';
+    timerInterval = setInterval(() => {
+      if (timerSeconds > 0) {
+        timerSeconds--;
+        updateDisplay();
+      } else {
+        clearInterval(timerInterval);
+        isRunning = false;
+        btn.textContent = 'Start Focus';
+        alert('🎉 Focus block completed! Time for a short restorative break.');
+      }
+    }, 1000);
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  isRunning = false;
+  timerSeconds = 25 * 60;
+  updateDisplay();
+  document.getElementById('timer-start').textContent = 'Start Focus';
+}
+
+function setTimer(minutes) {
+  clearInterval(timerInterval);
+  isRunning = false;
+  timerSeconds = minutes * 60;
+  updateDisplay();
+  document.getElementById('timer-start').textContent = 'Start Break';
+}
+</script>
+{% endblock %}

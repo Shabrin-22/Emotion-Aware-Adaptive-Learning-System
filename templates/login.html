@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Login - Emotion-Aware Adaptive Learning{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <span style="font-size: 2.5rem;">🎓</span>
+      <h1>Welcome Back</h1>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Sign in to monitor your cognitive state and access adaptive learning modules.</p>
+    </div>
+
+    <form method="post" action="{{ url_for('login') }}">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" placeholder="learner@gmail.com" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Sign In</button>
+    </form>
+
+    <div class="demo-credentials">
+      <p style="font-weight: 700; margin-bottom: 8px; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem;">One-Click Quick Login:</p>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn btn-secondary btn-sm" style="flex: 1;" onclick="fillDemo('learner@gmail.com', '1234')">
+          👤 Demo Learner
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" style="flex: 1;" onclick="fillDemo('admin@gmail.com', '1234')">
+          🛡️ Demo Admin
+        </button>
+      </div>
+    </div>
+
+    <p style="text-align: center; margin-top: 20px; font-size: 0.88rem; color: var(--text-muted);">
+      Don't have an account? <a href="{{ url_for('register') }}" style="color: var(--accent); font-weight: 600;">Create one</a>
+    </p>
+  </div>
+</div>
+
+<script>
+function fillDemo(email, pwd) {
+  document.getElementById('email').value = email;
+  document.getElementById('password').value = pwd;
+}
+</script>
+{% endblock %}

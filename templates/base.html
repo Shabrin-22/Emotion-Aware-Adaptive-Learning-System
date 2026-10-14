@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Emotion-Aware Adaptive Learning & Productivity System{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <!-- Chart.js CDN for interactive visual analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <div class="nav-container">
+      <a href="{{ url_for('index') }}" class="brand">
+        <span class="brand-icon">🧠</span>
+        <span>EmotionAware <span style="font-weight: 300; opacity: 0.85;">Adaptive</span></span>
+      </a>
+
+      <nav class="nav-links">
+        {% if session.get('user_id') %}
+          {% if session.get('role') == 'admin' %}
+            <a href="{{ url_for('admin') }}" class="{% if request.endpoint == 'admin' %}active{% endif %}">Admin Overview</a>
+          {% else %}
+            <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="{{ url_for('study') }}" class="{% if request.endpoint == 'study' %}active{% endif %}">Adaptive Study</a>
+          {% endif %}
+          <a href="{{ url_for('activity') }}" class="{% if request.endpoint == 'activity' %}active{% endif %}">+ New Reflection / Webcam</a>
+
+          <div class="user-badge">
+            <span>{{ session.get('name') }}</span>
+            <span class="role-tag {{ session.get('role') }}">{{ session.get('role') }}</span>
+          </div>
+
+          <a href="{{ url_for('logout') }}" style="color: #f87171;">Logout</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="{% if request.endpoint == 'login' %}active{% endif %}">Login</a>
+          <a href="{{ url_for('register') }}" class="{% if request.endpoint == 'register' %}active{% endif %}">Register</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for m in messages %}
+            <div class="flash-message">
+              <span>🔔</span>
+              <span>{{ m }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <p>Emotion-Aware Adaptive Learning & Productivity System &bull; Real-Time Cognitive State Modeling</p>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

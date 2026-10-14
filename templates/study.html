@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Adaptive Study Session - Emotion-Aware Learning{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <!-- Topic Selector -->
+  <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+    {% for t in topics %}
+      <a href="{{ url_for('study', topic=t.id) }}"
+         class="btn {% if selected_topic == t.id %}btn-primary{% else %}btn-secondary{% endif %}"
+         style="font-size: 0.88rem;">
+        <span>{{ t.icon }}</span> {{ t.name }}
+      </a>
+    {% endfor %}
+  </div>
+
+  <!-- Adaptive State Banner -->
+  <div class="card" style="margin-bottom: 20px; padding: 16px 20px; background: #ffffff; border-left: 5px solid {% if current_state == 'Focused' %}#10b981{% elif current_state == 'Motivated' %}#3b82f6{% elif current_state == 'Confused' %}#f59e0b{% elif current_state == 'Stressed' %}#ef4444{% else %}#9ca3af{% endif %};">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="state-badge {{ current_state }}" style="font-size: 0.95rem; padding: 6px 14px;">
+          ● Current State: {{ current_state }}
+        </span>
+        <span style="font-size: 0.88rem; color: var(--text-muted);">
+          <b>Difficulty Adapted:</b> {{ question.difficulty | capitalize }} ({{ intervention.difficulty_modifier }})
+        </span>
+      </div>
+
+      <div style="display: flex; gap: 8px; align-items: center;">
+        {% if current_state == 'Stressed' or intervention.show_break_modal %}
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openDeStressModal()" style="color: #ef4444; border-color: #fecaca; background: #fff5f5;">
+            🌿 Calming Break (4-7-8)
+          </button>
+        {% endif %}
+        <a href="{{ url_for('activity') }}" class="btn btn-outline btn-sm">
+          🔄 Re-Check State
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Adaptive Question Card -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
+          Topic: {{ selected_topic | upper }} &bull; Difficulty: <span style="color: {% if question.difficulty == 'hard' %}#ef4444{% elif question.difficulty == 'medium' %}#3b82f6{% else %}#10b981{% endif %}; font-weight: 800;">{{ question.difficulty | capitalize }}</span>
+        </span>
+        <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 4px;">
+          Adaptive Challenge
+        </h2>
+      </div>
+
+      <div>
+        <span style="background: #eff6ff; color: #1e40af; padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 700;">
+          {% if question.difficulty == 'hard' %}+300 XP{% elif question.difficulty == 'medium' %}+200 XP{% else %}+100 XP{% endif %}
+        </span>
+      </div>
+    </div>
+
+    <!-- Question Body -->
+    <div style="margin-bottom: 24px;">
+      <pre style="background: #0f172a; color: #f8fafc; padding: 18px; border-radius: 8px; font-family: monospace; font-size: 0.95rem; white-space: pre-wrap; line-height: 1.5; overflow-x: auto;">{{ question.question }}</pre>
+    </div>
+
+    {% if not submitted %}
+      <!-- Submission Form -->
+      <form method="post" action="{{ url_for('study', topic=selected_topic) }}">
+        <input type="hidden" name="question_id" value="{{ question.id }}">
+        <input type="hidden" name="current_state" value="{{ current_state }}">
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+          {% for opt in question.options %}
+            <label style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; background: white;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='var(--border)'">
+              <input type="radio" name="selected_option" value="{{ loop.index0 }}" required style="width: 18px; height: 18px;">
+              <span style="font-size: 0.95rem;"><b>{{ ['A', 'B', 'C', 'D'][loop.index0] }}.</b> {{ opt }}</span>
+            </label>
+          {% endfor %}
+        </div>
+
+        <!-- Scaffolded Hints (Especially useful when Confused) -->
+        <div style="margin-bottom: 20px; border: 1px dashed var(--border); border-radius: 8px; padding: 14px; background: #fffbeb;">
+          <details {% if current_state == 'Confused' %}open{% endif %}>
+            <summary style="font-weight: 700; color: #b45309; cursor: pointer; font-size: 0.9rem;">
+              💡 Need Assistance? Open Scaffolded Pedagogical Hints
+            </summary>
+            <div style="margin-top: 10px; font-size: 0.88rem; color: #78350f;">
+              <p><b>Hint 1 (Conceptual):</b> {{ question.hint_1 }}</p>
+              <p style="margin-top: 6px;"><b>Hint 2 (Step-by-Step):</b> {{ question.hint_2 }}</p>
+            </div>
+          </details>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          Submit Answer & Evaluate
+        </button>
+      </form>
+
+    {% else %}
+      <!-- Result Card -->
+      <div style="padding: 20px; border-radius: 8px; margin-bottom: 20px; background: {% if is_correct %}#ecfdf5; border: 1px solid #a7f3d0;{% else %}#fef2f2; border: 1px solid #fecaca;{% endif %}">
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: {% if is_correct %}#065f46{% else %}#991b1b{% endif %};">
+          {% if is_correct %}
+            ✅ Correct! Outstanding Problem Solving.
+          {% else %}
+            ❌ Not quite. Let's inspect the explanation below.
+          {% endif %}
+        </h3>
+        <p style="margin-top: 10px; font-size: 0.95rem; color: var(--text-main); line-height: 1.6;">
+          <b>Explanation:</b> {{ question.explanation }}
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <a href="{{ url_for('study', topic=selected_topic) }}" class="btn btn-primary" style="flex: 1;">
+          Next Adaptive Question →
+        </a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+          Dashboard
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- De-Stress Breathing Modal (4-7-8 Technique) -->
+<div class="modal-overlay" id="de-stress-modal">
+  <div class="modal-content">
+    <span style="font-size: 2.5rem;">🌿</span>
+    <h2 style="font-size: 1.5rem; font-weight: 800; margin-top: 8px;">Cognitive Reset: 4-7-8 Breathing</h2>
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 6px;">
+      Research demonstrates that 2 minutes of rhythmic breathing reduces autonomic nervous system stress and restores working memory capacity.
+    </p>
+
+    <div class="breathing-circle" id="breathing-instruction">
+      Breathe In
+    </div>
+
+    <p style="font-size: 0.88rem; color: #047857; font-weight: 600;">
+      Inhale through nose (4s) &bull; Hold breath (7s) &bull; Exhale through mouth (8s)
+    </p>
+
+    <button type="button" class="btn btn-success" style="margin-top: 24px;" onclick="closeDeStressModal()">
+      ✨ I Feel Calmer, Resume Study
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openDeStressModal() {
+  const modal = document.getElementById('de-stress-modal');
+  modal.classList.add('active');
+  startBreathingCycle();
+}
+
+function closeDeStressModal() {
+  const modal = document.getElementById('de-stress-modal');
+  modal.classList.remove('active');
+}
+
+let breathCycleInterval = null;
+function startBreathingCycle() {
+  const label = document.getElementById('breathing-instruction');
+  let phase = 0; // 0: inhale (4s), 1: hold (7s), 2: exhale (8s)
+
+  function step() {
+    if (phase === 0) {
+      label.textContent = "Inhale (4s)";
+      setTimeout(() => { phase = 1; step(); }, 4000);
+    } else if (phase === 1) {
+      label.textContent = "Hold (7s)";
+      setTimeout(() => { phase = 2; step(); }, 7000);
+    } else {
+      label.textContent = "Exhale (8s)";
+      setTimeout(() => { phase = 0; step(); }, 8000);
+    }
+  }
+  step();
+}
+
+// Auto-trigger modal if user is detected in Stressed state on initial load
+{% if current_state == 'Stressed' and not submitted %}
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    openDeStressModal();
+  }, 800);
+});
+{% endif %}
+</script>
+{% endblock %}

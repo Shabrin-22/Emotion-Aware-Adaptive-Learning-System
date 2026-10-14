@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Cognitive State Reflection & Telemetry - Emotion-Aware Learning{% endblock %}
+
+{% block content %}
+<div style="max-width: 820px; margin: 0 auto;">
+  <div style="margin-bottom: 24px;">
+    <h1 style="font-size: 1.8rem; font-weight: 800;">Multimodal Cognitive State Reflection</h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem;">
+      Analyze your current cognitive and emotional state through natural language reflections or real-time facial expression telemetry.
+    </p>
+  </div>
+
+  <!-- Dual-Modality Tabs -->
+  <div class="card">
+    <div class="tabs-nav">
+      <button class="tab-btn active" id="tab-btn-text" onclick="switchTab('text')">
+        ✍️ Text Reflection (NLP)
+      </button>
+      <button class="tab-btn" id="tab-btn-webcam" onclick="switchTab('webcam')">
+        📹 Real-Time Webcam Telemetry
+      </button>
+    </div>
+
+    <!-- TAB 1: TEXT REFLECTION -->
+    <div id="tab-content-text">
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 14px;">
+        Describe how you currently feel about your learning task, coursework, or mental fatigue level.
+      </p>
+
+      <!-- Quick sample prompts -->
+      <div style="margin-bottom: 16px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quick Starters:</span>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setPrompt('I am deeply focused and making steady progress solving this algorithm.')">
+            🎯 Focused Flow
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setPrompt('I feel excited and highly motivated to master these new machine learning concepts today!')">
+            🚀 High Motivation
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setPrompt('I do not understand why this recursive function returns None and I feel completely stuck.')">
+            💡 Confused / Stuck
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setPrompt('I have three deadlines tomorrow, an unbearable headache, and feel completely overwhelmed.')">
+            🌿 Stressed / Overloaded
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setPrompt('This lecture video is dry and repetitive, and I cannot keep my eyes open.')">
+            ⚡ Bored / Monotonous
+          </button>
+        </div>
+      </div>
+
+      <form method="post" action="{{ url_for('activity') }}">
+        <input type="hidden" name="modality" value="text">
+        <div class="form-group">
+          <label for="reflection-text">Your Learning Reflection</label>
+          <textarea id="reflection-text" name="description" rows="5" placeholder="Example: I am working through the data structure problem and understand the logic, but I am starting to feel fatigued..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          🔍 Analyze Cognitive State & Generate Adaptive Interventions
+        </button>
+      </form>
+    </div>
+
+    <!-- TAB 2: WEBCAM FACIAL TELEMETRY -->
+    <div id="tab-content-webcam" style="display: none;">
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">
+        Your browser will analyze facial expression markers and head movement stability in real-time. <b>Privacy Note:</b> Video is processed locally in browser memory and is never uploaded.
+      </p>
+
+      <div class="webcam-container">
+        <div class="video-wrapper">
+          <video id="webcam-video" autoplay playsinline muted></video>
+          <canvas id="webcam-canvas"></canvas>
+          <div class="webcam-hud">
+            <div>State: <b id="hud-state" style="color: #38bdf8;">Inactive</b></div>
+            <div>Confidence: <b id="hud-conf">--%</b></div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+          <button type="button" class="btn btn-primary btn-sm" onclick="startWebcam()">
+            ▶️ Enable Webcam
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="stopWebcam()">
+            ⏹️ Stop Webcam
+          </button>
+          <span id="webcam-status-pill" class="state-badge Bored">⚪ Camera Inactive</span>
+        </div>
+
+        <!-- Testing Simulation Bar -->
+        <div style="width: 100%; margin-top: 10px; padding: 14px; background: #f8fafc; border: 1px dashed var(--border); border-radius: 8px;">
+          <p style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
+            Testing / Simulation Controls (Test specific facial emotion states):
+          </p>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="overrideWebcam('Focused')">🟢 Focused Face</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="overrideWebcam('Motivated')">🔵 Motivated Smile</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="overrideWebcam('Confused')">🟡 Confused Furrow</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="overrideWebcam('Stressed')">🔴 Stressed Strain</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="overrideWebcam('Bored')">⚪ Bored Gaze Away</button>
+          </div>
+        </div>
+
+        <form method="post" action="{{ url_for('activity') }}" style="width: 100%; margin-top: 10px;">
+          <input type="hidden" name="modality" value="webcam">
+          <input type="hidden" id="webcam-state-input" name="description" value="Webcam Facial Telemetry: Detected Focused state with 88% confidence.">
+          <button type="submit" class="btn btn-success" style="width: 100%;">
+            📸 Capture Snapshot & Submit Cognitive Telemetry
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='webcam.js') }}"></script>
+<script>
+let tracker = null;
+
+function switchTab(tab) {
+  const textBtn = document.getElementById('tab-btn-text');
+  const webcamBtn = document.getElementById('tab-btn-webcam');
+  const textContent = document.getElementById('tab-content-text');
+  const webcamContent = document.getElementById('tab-content-webcam');
+
+  if (tab === 'text') {
+    textBtn.classList.add('active');
+    webcamBtn.classList.remove('active');
+    textContent.style.display = 'block';
+    webcamContent.style.display = 'none';
+  } else {
+    webcamBtn.classList.add('active');
+    textBtn.classList.remove('active');
+    textContent.style.display = 'none';
+    webcamContent.style.display = 'block';
+
+    if (!tracker) {
+      tracker = new CognitiveWebcamTracker();
+      tracker.start();
+    }
+  }
+}
+
+function setPrompt(text) {
+  document.getElementById('reflection-text').value = text;
+}
+
+function startWebcam() {
+  if (!tracker) {
+    tracker = new CognitiveWebcamTracker();
+  }
+  tracker.start();
+}
+
+function stopWebcam() {
+  if (tracker) {
+    tracker.stop();
+  }
+}
+
+function overrideWebcam(state) {
+  if (!tracker) {
+    tracker = new CognitiveWebcamTracker();
+  }
+  tracker.setManualState(state, 92);
+}
+</script>
+{% endblock %}

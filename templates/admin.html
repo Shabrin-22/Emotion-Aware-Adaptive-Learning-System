@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% block title %}Admin Command Center - Emotion-Aware Adaptive Learning{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <h1 style="font-size: 1.8rem; font-weight: 800;">Educator & Admin Command Center</h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem;">
+      Institutional oversight, student cognitive well-being monitoring, and ML model evaluation metrics.
+    </p>
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <a href="{{ url_for('export_csv') }}" class="btn btn-secondary">
+      📥 Export CSV Report
+    </a>
+  </div>
+</div>
+
+<!-- 4 KPI Metrics -->
+<div class="grid-cols-4">
+  <div class="stat-card">
+    <span class="stat-label">Active Learners</span>
+    <span class="stat-value">{{ total_learners }}</span>
+    <span class="stat-sub">Enrolled students</span>
+  </div>
+
+  <div class="stat-card">
+    <span class="stat-label">Total Inferences</span>
+    <span class="stat-value">{{ total_activities }}</span>
+    <span class="stat-sub">Cognitive states classified</span>
+  </div>
+
+  <div class="stat-card">
+    <span class="stat-label">Study Sessions</span>
+    <span class="stat-value" style="color: #3b82f6;">{{ total_sessions }}</span>
+    <span class="stat-sub">Adaptive sessions recorded</span>
+  </div>
+
+  <div class="stat-card">
+    <span class="stat-label">Champion ML Model</span>
+    <span class="stat-value" style="font-size: 1.35rem; color: #10b981;">
+      {{ ml_report.champion_model if ml_report else 'Linear SVM' }}
+    </span>
+    <span class="stat-sub">
+      Accuracy: {{ (ml_report.models[ml_report.champion_model].accuracy * 100) | round(1) if ml_report else '68.0' }}%
+    </span>
+  </div>
+</div>
+
+<!-- Class Emotional Heatmap & At-Risk Alerts Grid -->
+<div class="grid-cols-2">
+  <!-- Chart: Institutional State Distribution -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title"><span>📈</span> Class-Wide Emotional Distribution</h2>
+      <span style="font-size: 0.8rem; color: var(--text-muted);">Aggregate Student States</span>
+    </div>
+    <div style="height: 280px; position: relative;">
+      <canvas id="adminStateChart"></canvas>
+    </div>
+  </div>
+
+  <!-- At-Risk Alert Table -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title" style="color: #b91c1c;"><span>⚠️</span> Learners Requiring Support</h2>
+      <span style="font-size: 0.8rem; color: var(--text-muted);">High Stress / Confusion Flags</span>
+    </div>
+
+    {% if at_risk_learners %}
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>Email</th>
+              <th>Stress/Confusion Count</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in at_risk_learners %}
+              <tr>
+                <td style="font-weight: 700;">{{ s.name }}</td>
+                <td style="color: var(--text-muted); font-size: 0.85rem;">{{ s.email }}</td>
+                <td>
+                  <span style="color: #b91c1c; font-weight: 800;">{{ s.stress_count }} instances</span>
+                </td>
+                <td>
+                  <span class="state-badge Stressed">Needs Intervention</span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="color: var(--text-muted); padding: 30px; text-align: center;">
+        No high-stress cognitive flags detected among current learners.
+      </p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Machine Learning Model Benchmark & Confusion Matrix -->
+{% if ml_report %}
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title"><span>🤖</span> Machine Learning Model Benchmarking & Evaluation</h2>
+    <span style="font-size: 0.8rem; color: var(--text-muted);">80/20 Stratified Train-Test Split (N={{ ml_report.dataset_samples }})</span>
+  </div>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Candidate Classifier</th>
+          <th>Test Accuracy</th>
+          <th>Weighted Precision</th>
+          <th>Weighted Recall</th>
+          <th>Weighted F1-Score</th>
+          <th>Macro F1-Score</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for name, m in ml_report.models.items() %}
+          <tr {% if name == ml_report.champion_model %}style="background: #f0fdf4; font-weight: 600;"{% endif %}>
+            <td>
+              {{ name }}
+              {% if name == ml_report.champion_model %}
+                <span style="background: #10b981; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 9999px; margin-left: 6px;">CHAMPION</span>
+              {% endif %}
+            </td>
+            <td>{{ (m.accuracy * 100) | round(2) }}%</td>
+            <td>{{ (m.precision_weighted * 100) | round(2) }}%</td>
+            <td>{{ (m.recall_weighted * 100) | round(2) }}%</td>
+            <td>{{ (m.f1_weighted * 100) | round(2) }}%</td>
+            <td>{{ (m.f1_macro * 100) | round(2) }}%</td>
+            <td>
+              {% if name == ml_report.champion_model %}
+                <span class="state-badge Focused">Active in Production</span>
+              {% else %}
+                <span style="color: var(--text-muted); font-size: 0.82rem;">Evaluated Baseline</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Confusion Matrix Grid -->
+  {% if ml_report.champion_model in ml_report.models and ml_report.models[ml_report.champion_model].confusion_matrix %}
+    <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border);">
+      <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 12px;">
+        Confusion Matrix: {{ ml_report.champion_model }}
+      </h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
+        Rows represent True Cognitive States; Columns represent Predicted Cognitive States.
+      </p>
+
+      <div class="table-responsive">
+        <table class="cm-table">
+          <thead>
+            <tr>
+              <th style="background: transparent;">True \ Pred</th>
+              {% for cls_name in ml_report.classes %}
+                <th>{{ cls_name }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in ml_report.models[ml_report.champion_model].confusion_matrix %}
+              {% set row_idx = loop.index0 %}
+              <tr>
+                <td style="font-weight: 700; background: #f8fafc;">{{ ml_report.classes[row_idx] }}</td>
+                {% for val in row %}
+                  {% set col_idx = loop.index0 %}
+                  <td class="{% if row_idx == col_idx and val > 4 %}cm-cell-high{% elif row_idx == col_idx %}cm-cell-mid{% elif val > 0 %}cm-cell-mid{% else %}cm-cell-low{% endif %}">
+                    {{ val }}
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Full Activity Audit Log -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title"><span>📋</span> Real-Time Learner Activity Audit Log</h2>
+    <span style="font-size: 0.8rem; color: var(--text-muted);">Showing recent 50 entries</span>
+  </div>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Learner</th>
+          <th>Modality</th>
+          <th>Predicted State</th>
+          <th>Confidence</th>
+          <th>Reflection / Telemetry Input</th>
+          <th>Adaptive Recommendation</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in all_activities %}
+          <tr>
+            <td>
+              <b>{{ a.user_name }}</b><br>
+              <span style="color: var(--text-muted); font-size: 0.78rem;">{{ a.user_email }}</span>
+            </td>
+            <td>
+              {% if a.modality == 'webcam' %}
+                <span style="background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">📹 WEBCAM</span>
+              {% else %}
+                <span style="background: #f1f5f9; color: #334155; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">✍️ TEXT</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="state-badge {{ a.state }}">{{ a.state }}</span>
+            </td>
+            <td style="font-weight: 700;">{{ a.confidence | round(1) if a.confidence else 85.0 }}%</td>
+            <td style="max-width: 320px; font-size: 0.88rem;">{{ a.description }}</td>
+            <td style="max-width: 280px; color: var(--text-muted); font-size: 0.82rem;">{{ a.recommendation }}</td>
+            <td style="white-space: nowrap; color: var(--text-muted); font-size: 0.82rem;">{{ a.created_at }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const adminStateData = {{ state_counts | tojson }};
+const adminCtx = document.getElementById('adminStateChart').getContext('2d');
+
+new Chart(adminCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Focused', 'Motivated', 'Confused', 'Stressed', 'Bored'],
+    datasets: [{
+      label: 'Logged Student States',
+      data: [
+        adminStateData['Focused'] || 0,
+        adminStateData['Motivated'] || 0,
+        adminStateData['Confused'] || 0,
+        adminStateData['Stressed'] || 0,
+        adminStateData['Bored'] || 0
+      ],
+      backgroundColor: [
+        '#10b981',
+        '#3b82f6',
+        '#f59e0b',
+        '#ef4444',
+        '#9ca3af'
+      ],
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { stepSize: 1 }
+      }
+    }
+  }
+});
+</script>
+{% endblock %}
