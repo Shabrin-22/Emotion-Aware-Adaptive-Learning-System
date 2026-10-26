@@ -46,6 +46,14 @@ RECOMMENDATIONS = {
         "High cognitive overload detected. Elevated stress impedes working memory retention. "
         "Take a short 2-5 minute mindfulness or breathing break, break tasks into micro-steps, and pace yourself."
     ),
+    "Fatigued": (
+        "High mental fatigue and eye strain detected. Working memory capacity is depleted. "
+        "Take a restorative pause, do light stretching, and complete a bite-sized micro-activity."
+    ),
+    "Neutral": (
+        "Balanced baseline state. Continue with the standard structured curriculum and "
+        "core practice exercises at a steady pace."
+    ),
     "Bored": (
         "Understimulation and attention decay detected. Re-engage cognitive faculties with interactive "
         "speed challenges, gamified quiz rounds, or switch to a more stimulating subject."
@@ -57,6 +65,8 @@ COGNITIVE_LOAD_MAP = {
     "Motivated": "Moderate / Active Engagement",
     "Confused": "Cognitive Obstacle (Misconception)",
     "Stressed": "Severe Cognitive Overload",
+    "Fatigued": "Severe Cognitive Fatigue / Depleted Energy",
+    "Neutral": "Standard Baseline Cognitive Load",
     "Bored": "Cognitive Understimulation"
 }
 
@@ -74,12 +84,12 @@ def predict_cognitive_state(text: str):
     clean_text = text.strip()
     if not clean_text:
         return {
-            "state": "Focused",
-            "confidence": 50.0,
+            "state": "Neutral",
+            "confidence": 60.0,
             "probabilities": {},
-            "recommendation": RECOMMENDATIONS["Focused"],
-            "cognitive_load": COGNITIVE_LOAD_MAP["Focused"],
-            "intervention": get_adaptive_intervention("Focused", 50.0)
+            "recommendation": RECOMMENDATIONS["Neutral"],
+            "cognitive_load": COGNITIVE_LOAD_MAP["Neutral"],
+            "intervention": get_adaptive_intervention("Neutral", 60.0)
         }
 
     vec = _vectorizer.transform([clean_text])
@@ -89,23 +99,22 @@ def predict_cognitive_state(text: str):
 
     # Predict probabilities if supported
     probs = {}
-    confidence = 75.0
+    confidence = 80.0
     if hasattr(_model, "predict_proba"):
         prob_arr = _model.predict_proba(vec)[0]
         classes = _model.classes_
         for cls_name, p in zip(classes, prob_arr):
             probs[str(cls_name)] = round(float(p) * 100, 1)
-        confidence = probs.get(state, 75.0)
+        confidence = probs.get(state, 80.0)
     elif hasattr(_model, "decision_function"):
-        # Softmax over decision values
         dec = _model.decision_function(vec)[0]
         exp_d = np.exp(dec - np.max(dec))
         soft = exp_d / np.sum(exp_d)
         for cls_name, p in zip(_model.classes_, soft):
             probs[str(cls_name)] = round(float(p) * 100, 1)
-        confidence = probs.get(state, 75.0)
+        confidence = probs.get(state, 80.0)
 
-    recommendation = RECOMMENDATIONS.get(state, RECOMMENDATIONS["Focused"])
+    recommendation = RECOMMENDATIONS.get(state, RECOMMENDATIONS["Neutral"])
     cognitive_load = COGNITIVE_LOAD_MAP.get(state, "Moderate")
     intervention = get_adaptive_intervention(state, confidence)
 
@@ -118,7 +127,6 @@ def predict_cognitive_state(text: str):
         "intervention": intervention
     }
 
-# Backward compatible helper for existing app.py callers
 def predict_state(text: str):
     res = predict_cognitive_state(text)
     return res["state"], res["recommendation"]

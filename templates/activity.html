@@ -1,35 +1,41 @@
 {% extends "base.html" %}
-{% block title %}Cognitive State Reflection & Telemetry - Emotion-Aware Learning{% endblock %}
+{% block title %}Cognitive State Reflection & Telemetry - Emotion-Aware Learning (2026MIN198){% endblock %}
 
 {% block content %}
-<div style="max-width: 820px; margin: 0 auto;">
+<div style="max-width: 860px; margin: 0 auto;">
   <div style="margin-bottom: 24px;">
-    <h1 style="font-size: 1.8rem; font-weight: 800;">Multimodal Cognitive State Reflection</h1>
-    <p style="color: var(--text-muted); font-size: 0.95rem;">
-      Analyze your current cognitive and emotional state through natural language reflections or real-time facial expression telemetry.
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <h1 style="font-size: 1.8rem; font-weight: 800;">Multimodal Cognitive State Modeling</h1>
+      <span style="background: #e0e7ff; color: #3730a3; padding: 3px 10px; border-radius: 9999px; font-size: 0.78rem; font-weight: 700;">Project 2026MIN198</span>
+    </div>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 4px;">
+      Estimate your current cognitive or emotional state via natural language reflection, real-time facial telemetry, or manual selection fallback.
     </p>
   </div>
 
-  <!-- Dual-Modality Tabs -->
+  <!-- Multimodal Tabs -->
   <div class="card">
-    <div class="tabs-nav">
+    <div class="tabs-nav" style="display: flex; gap: 8px; border-bottom: 2px solid var(--border); margin-bottom: 20px;">
       <button class="tab-btn active" id="tab-btn-text" onclick="switchTab('text')">
         ✍️ Text Reflection (NLP)
       </button>
       <button class="tab-btn" id="tab-btn-webcam" onclick="switchTab('webcam')">
-        📹 Real-Time Webcam Telemetry
+        📹 Webcam Telemetry
+      </button>
+      <button class="tab-btn" id="tab-btn-manual" onclick="switchTab('manual')">
+        ⚙️ Manual State Selection
       </button>
     </div>
 
     <!-- TAB 1: TEXT REFLECTION -->
     <div id="tab-content-text">
       <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 14px;">
-        Describe how you currently feel about your learning task, coursework, or mental fatigue level.
+        Describe how you currently feel about your study material, coursework difficulty, or mental fatigue level.
       </p>
 
-      <!-- Quick sample prompts -->
+      <!-- Quick sample prompts for all 6 states -->
       <div style="margin-bottom: 16px;">
-        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quick Starters:</span>
+        <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quick Starters:</span>
         <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
           <button type="button" class="btn btn-secondary btn-sm" onclick="setPrompt('I am deeply focused and making steady progress solving this algorithm.')">
             🎯 Focused Flow
@@ -43,8 +49,11 @@
           <button type="button" class="btn btn-secondary btn-sm" onclick="setPrompt('I have three deadlines tomorrow, an unbearable headache, and feel completely overwhelmed.')">
             🌿 Stressed / Overloaded
           </button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setPrompt('This lecture video is dry and repetitive, and I cannot keep my eyes open.')">
-            ⚡ Bored / Monotonous
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setPrompt('My eyes are heavy, I am exhausted and yawning after hours of study.')">
+            😴 Fatigued / Sleepy
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setPrompt('I am in a neutral state, proceeding with the regular study sequence at a steady pace.')">
+            ⚖️ Neutral Baseline
           </button>
         </div>
       </div>
@@ -64,9 +73,9 @@
 
     <!-- TAB 2: WEBCAM FACIAL TELEMETRY -->
     <div id="tab-content-webcam" style="display: none;">
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">
-        Your browser will analyze facial expression markers and head movement stability in real-time. <b>Privacy Note:</b> Video is processed locally in browser memory and is never uploaded.
-      </p>
+      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; color: #166534;">
+        <b>🔒 Privacy Protection Guarantee:</b> Facial telemetry is processed 100% locally in browser memory via HTML5 Canvas. No video streams or face images are ever uploaded or saved on any remote server.
+      </div>
 
       <div class="webcam-container">
         <div class="video-wrapper">
@@ -78,27 +87,28 @@
           </div>
         </div>
 
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center;">
           <button type="button" class="btn btn-primary btn-sm" onclick="startWebcam()">
             ▶️ Enable Webcam
           </button>
           <button type="button" class="btn btn-secondary btn-sm" onclick="stopWebcam()">
             ⏹️ Stop Webcam
           </button>
-          <span id="webcam-status-pill" class="state-badge Bored">⚪ Camera Inactive</span>
+          <span id="webcam-status-pill" class="state-badge Neutral">⚪ Camera Inactive</span>
         </div>
 
         <!-- Testing Simulation Bar -->
         <div style="width: 100%; margin-top: 10px; padding: 14px; background: #f8fafc; border: 1px dashed var(--border); border-radius: 8px;">
-          <p style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
-            Testing / Simulation Controls (Test specific facial emotion states):
+          <p style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
+            Simulate / Override Facial Expression Telemetry:
           </p>
           <div style="display: flex; gap: 6px; flex-wrap: wrap;">
             <button type="button" class="btn btn-secondary btn-sm" onclick="overrideWebcam('Focused')">🟢 Focused Face</button>
             <button type="button" class="btn btn-secondary btn-sm" onclick="overrideWebcam('Motivated')">🔵 Motivated Smile</button>
             <button type="button" class="btn btn-secondary btn-sm" onclick="overrideWebcam('Confused')">🟡 Confused Furrow</button>
             <button type="button" class="btn btn-secondary btn-sm" onclick="overrideWebcam('Stressed')">🔴 Stressed Strain</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="overrideWebcam('Bored')">⚪ Bored Gaze Away</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="overrideWebcam('Fatigued')">🟣 Fatigued Drowsy</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="overrideWebcam('Neutral')">⚪ Neutral Baseline</button>
           </div>
         </div>
 
@@ -111,6 +121,79 @@
         </form>
       </div>
     </div>
+
+    <!-- TAB 3: MANUAL STATE SELECTION FALLBACK -->
+    <div id="tab-content-manual" style="display: none;">
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">
+        If webcam access is restricted or you are demonstrating specific adaptive pathways to project evaluators, select your desired cognitive state below to immediately trigger tailored curriculum adaptation.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+        <form method="post" action="{{ url_for('activity') }}">
+          <input type="hidden" name="modality" value="manual_override">
+          <input type="hidden" name="manual_state" value="Focused">
+          <button type="submit" class="card" style="width: 100%; text-align: left; cursor: pointer; border-left: 4px solid #10b981; padding: 16px; background: white; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <div style="font-size: 1.5rem;">🎯</div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 6px; color: #047857;">Focused State</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Deep work flow, sharp concentration. Triggers Mastery Mode (+1 Difficulty) with Hard questions.</p>
+          </button>
+        </form>
+
+        <form method="post" action="{{ url_for('activity') }}">
+          <input type="hidden" name="modality" value="manual_override">
+          <input type="hidden" name="manual_state" value="Confused">
+          <button type="submit" class="card" style="width: 100%; text-align: left; cursor: pointer; border-left: 4px solid #f59e0b; padding: 16px; background: white; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <div style="font-size: 1.5rem;">💡</div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 6px; color: #b45309;">Confused State</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Cognitive obstacle detected. Triggers Foundational Scaffolding (-1 Difficulty) and unlocks step-by-step hints.</p>
+          </button>
+        </form>
+
+        <form method="post" action="{{ url_for('activity') }}">
+          <input type="hidden" name="modality" value="manual_override">
+          <input type="hidden" name="manual_state" value="Stressed">
+          <button type="submit" class="card" style="width: 100%; text-align: left; cursor: pointer; border-left: 4px solid #ef4444; padding: 16px; background: white; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <div style="font-size: 1.5rem;">🌿</div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 6px; color: #b91c1c;">Stressed State</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">High cognitive overload. Triggers gentle pace, low-pressure task, and automated 4-7-8 breathing reset.</p>
+          </button>
+        </form>
+
+        <form method="post" action="{{ url_for('activity') }}">
+          <input type="hidden" name="modality" value="manual_override">
+          <input type="hidden" name="manual_state" value="Fatigued">
+          <button type="submit" class="card" style="width: 100%; text-align: left; cursor: pointer; border-left: 4px solid #8b5cf6; padding: 16px; background: white; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <div style="font-size: 1.5rem;">😴</div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 6px; color: #6d28d9;">Fatigued State</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Mental fatigue and eye strain. Recommends a 5-minute break and provides a low-load flashcard micro-review.</p>
+          </button>
+        </form>
+
+        <form method="post" action="{{ url_for('activity') }}">
+          <input type="hidden" name="modality" value="manual_override">
+          <input type="hidden" name="manual_state" value="Neutral">
+          <button type="submit" class="card" style="width: 100%; text-align: left; cursor: pointer; border-left: 4px solid #64748b; padding: 16px; background: white; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <div style="font-size: 1.5rem;">⚖️</div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 6px; color: #334155;">Neutral State</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Balanced baseline mindset. Continues with the standard curriculum and medium-difficulty exercises.</p>
+          </button>
+        </form>
+
+        <form method="post" action="{{ url_for('activity') }}">
+          <input type="hidden" name="modality" value="manual_override">
+          <input type="hidden" name="manual_state" value="Motivated">
+          <button type="submit" class="card" style="width: 100%; text-align: left; cursor: pointer; border-left: 4px solid #3b82f6; padding: 16px; background: white; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <div style="font-size: 1.5rem;">🚀</div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 6px; color: #1d4ed8;">Motivated State</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">High drive and excitement. Escalates to mastery challenges with bonus streak XP.</p>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 16px; padding: 14px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+    💡 <b>Academic Note (College Review):</b> Cognitive states are modeled using an 80/20 stratified TF-IDF machine learning pipeline or client-side optical frame telemetry. These serve as adaptive pedagogical heuristics rather than clinical medical diagnoses.
   </div>
 </div>
 {% endblock %}
@@ -123,23 +206,38 @@ let tracker = null;
 function switchTab(tab) {
   const textBtn = document.getElementById('tab-btn-text');
   const webcamBtn = document.getElementById('tab-btn-webcam');
+  const manualBtn = document.getElementById('tab-btn-manual');
+
   const textContent = document.getElementById('tab-content-text');
   const webcamContent = document.getElementById('tab-content-webcam');
+  const manualContent = document.getElementById('tab-content-manual');
+
+  textBtn.classList.remove('active');
+  webcamBtn.classList.remove('active');
+  manualBtn.classList.remove('active');
+
+  textContent.style.display = 'none';
+  webcamContent.style.display = 'none';
+  manualContent.style.display = 'none';
 
   if (tab === 'text') {
     textBtn.classList.add('active');
-    webcamBtn.classList.remove('active');
     textContent.style.display = 'block';
-    webcamContent.style.display = 'none';
-  } else {
+    if (tracker && tracker.isRunning) {
+      tracker.stop();
+    }
+  } else if (tab === 'webcam') {
     webcamBtn.classList.add('active');
-    textBtn.classList.remove('active');
-    textContent.style.display = 'none';
     webcamContent.style.display = 'block';
-
     if (!tracker) {
       tracker = new CognitiveWebcamTracker();
-      tracker.start();
+    }
+    tracker.start();
+  } else if (tab === 'manual') {
+    manualBtn.classList.add('active');
+    manualContent.style.display = 'block';
+    if (tracker && tracker.isRunning) {
+      tracker.stop();
     }
   }
 }

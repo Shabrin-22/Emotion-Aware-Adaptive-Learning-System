@@ -1,73 +1,79 @@
 {% extends "base.html" %}
-{% block title %}Learner Dashboard - Emotion-Aware Adaptive Learning{% endblock %}
+{% block title %}Learner Dashboard - Emotion-Aware Adaptive Learning (2026MIN198){% endblock %}
 
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
   <div>
-    <h1 style="font-size: 1.8rem; font-weight: 800;">Learner Analytics & Cognitive Hub</h1>
-    <p style="color: var(--text-muted); font-size: 0.95rem;">
-      Real-time cognitive modeling and personalized adaptive recommendations for <b>{{ session.get('name') }}</b>.
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <h1 style="font-size: 1.8rem; font-weight: 800;">Learner Analytics & Cognitive Hub</h1>
+      <span style="background: #e0e7ff; color: #3730a3; padding: 3px 10px; border-radius: 9999px; font-size: 0.78rem; font-weight: 700;">Project 2026MIN198</span>
+    </div>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 4px;">
+      Real-time cognitive state modeling, genuine adaptive content recommendations, and productivity tracking for <b>{{ session.get('name') }}</b>.
     </p>
   </div>
   <div style="display: flex; gap: 10px;">
     <a href="{{ url_for('activity') }}" class="btn btn-secondary">
-      📸 Multimodal Reflection
+      📸 Multimodal Reflection & Telemetry
     </a>
-    <a href="{{ url_for('study') }}" class="btn btn-primary">
-      🚀 Start Adaptive Study
+    <a href="{{ url_for('study', restart='1') }}" class="btn btn-primary">
+      🚀 Start Adaptive Study Session
     </a>
   </div>
 </div>
 
-<!-- 4 KPI Metrics -->
-<div class="grid-cols-4">
+<!-- 5 KPI Metrics -->
+<div class="grid-cols-4" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
   <div class="stat-card">
     <span class="stat-label">Total Reflections</span>
     <span class="stat-value">{{ total_activities }}</span>
-    <span class="stat-sub">Across text & webcam modalities</span>
+    <span class="stat-sub">Across text, telemetry & manual</span>
   </div>
 
   <div class="stat-card">
     <span class="stat-label">Dominant Cognitive State</span>
     <div style="margin-top: 6px;">
-      <span class="state-badge {{ dominant_state }}" style="font-size: 1.1rem; padding: 6px 14px;">
+      <span class="state-badge {{ dominant_state }}" style="font-size: 1.05rem; padding: 6px 14px;">
         {{ dominant_state }}
       </span>
     </div>
-    <span class="stat-sub" style="margin-top: 8px;">Primary state in recent sessions</span>
+    <span class="stat-sub" style="margin-top: 8px;">Primary state across sessions</span>
   </div>
 
   <div class="stat-card">
     <span class="stat-label">Productivity & Flow Score</span>
     <span class="stat-value" style="color: #10b981;">{{ productivity_score }}%</span>
-    <span class="stat-sub">Ratio of Focused & Motivated states</span>
+    <span class="stat-sub">Ratio of Focused & Motivated work</span>
   </div>
 
   <div class="stat-card">
-    <span class="stat-label">Active Focus Streak</span>
-    <span class="stat-value" style="color: #3b82f6;">🔥 4 Days</span>
-    <span class="stat-sub">Consistent study engagement</span>
+    <span class="stat-label">Total Study Time</span>
+    <span class="stat-value" style="color: #3b82f6;">⏱️ {{ total_study_seconds | format_duration }}</span>
+    <span class="stat-sub">{{ total_sessions_completed }} completed sessions recorded</span>
   </div>
 </div>
 
-<!-- Charts & Interactive Tools Grid -->
+<!-- Charts & Interactive Focus Timer Grid -->
 <div class="grid-cols-2">
   <!-- Chart Card -->
   <div class="card">
     <div class="card-header">
       <h2 class="card-title"><span>📊</span> Cognitive State Distribution</h2>
-      <span style="font-size: 0.8rem; color: var(--text-muted);">Historical Aggregates</span>
+      <span style="font-size: 0.8rem; color: var(--text-muted);">Historical Aggregates (6 States)</span>
     </div>
     <div style="height: 280px; position: relative;">
       <canvas id="stateChart"></canvas>
     </div>
   </div>
 
-  <!-- Pomodoro Deep Work Timer -->
+  <!-- Pomodoro Deep Work Focus Timer -->
   <div class="card pomodoro-box">
-    <h2 style="font-size: 1.25rem; font-weight: 700;">⏱️ Adaptive Focus Timer</h2>
-    <p style="color: #94a3b8; font-size: 0.88rem; margin-top: 4px;">
-      Synchronized with your cognitive state to optimize study intervals and break reminders.
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="font-size: 1.25rem; font-weight: 700;">⏱️ Adaptive Focus Timer</h2>
+      <span style="background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">Pomodoro Protocol</span>
+    </div>
+    <p style="color: #94a3b8; font-size: 0.88rem; margin-top: 6px;">
+      Synchronized with your cognitive state to optimize study intervals and automated break reminders.
     </p>
 
     <div class="pomodoro-time" id="timer-display">25:00</div>
@@ -75,13 +81,69 @@
     <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
       <button class="btn btn-primary" id="timer-start" onclick="toggleTimer()">Start Focus</button>
       <button class="btn btn-secondary" onclick="resetTimer()">Reset</button>
-      <button class="btn btn-secondary" onclick="setTimer(5)">5m Break</button>
+      <button class="btn btn-secondary" onclick="setTimer(5)">5m Rest</button>
     </div>
 
     <div style="margin-top: 18px; padding: 12px; background: rgba(255,255,255,0.08); border-radius: 8px; font-size: 0.82rem; text-align: left;">
-      <p>💡 <b>Adaptive Rule:</b> If webcam or reflection detects <i>Stressed</i> state, the timer will automatically trigger a 3-minute calming breathing session.</p>
+      <p>💡 <b>Adaptive Trigger:</b> When <i>Stressed</i> or <i>Fatigued</i> states are modeled, the system recommends a restorative break or 4-7-8 breathing reset.</p>
     </div>
   </div>
+</div>
+
+<!-- Persistent Study Sessions History Table -->
+<div class="card">
+  <div class="card-header">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <h2 class="card-title"><span>📚</span> Study Sessions History</h2>
+      <span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700;">Persistent Tracking</span>
+    </div>
+    <a href="{{ url_for('study', restart='1') }}" class="btn btn-primary btn-sm">+ Start New Session</a>
+  </div>
+
+  {% if study_sessions %}
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Session #</th>
+            <th>Topic</th>
+            <th>Duration</th>
+            <th>Questions Answered</th>
+            <th>Score Earned</th>
+            <th>Dominant State</th>
+            <th>Status</th>
+            <th>Completed At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in study_sessions %}
+            <tr>
+              <td style="font-weight: 700; color: var(--text-muted);">#{{ s.id }}</td>
+              <td style="font-weight: 600;">{{ s.topic }}</td>
+              <td style="color: var(--accent); font-weight: 700;">{{ s.duration_seconds | format_duration }}</td>
+              <td>{{ s.total_questions }} questions</td>
+              <td style="color: #10b981; font-weight: 700;">+{{ s.score }} XP</td>
+              <td>
+                <span class="state-badge {{ s.dominant_state }}">{{ s.dominant_state }}</span>
+              </td>
+              <td>
+                <span style="background: #ecfdf5; color: #047857; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700;">✓ Completed</span>
+              </td>
+              <td style="white-space: nowrap; color: var(--text-muted); font-size: 0.85rem;">{{ s.created_at }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
+      <p style="font-size: 1.1rem; font-weight: 600;">No study sessions completed yet.</p>
+      <p style="font-size: 0.9rem; margin-top: 4px;">Click the button below to begin your first adaptive study block!</p>
+      <a href="{{ url_for('study', restart='1') }}" class="btn btn-primary" style="margin-top: 14px;">
+        🚀 Launch Study Session
+      </a>
+    </div>
+  {% endif %}
 </div>
 
 <!-- Recent Activities Table -->
@@ -110,9 +172,11 @@
               <td style="white-space: nowrap; color: var(--text-muted); font-size: 0.85rem;">{{ a.created_at }}</td>
               <td>
                 {% if a.modality == 'webcam' %}
-                  <span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 600;">📹 Webcam</span>
+                  <span style="background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700;">📹 Webcam</span>
+                {% elif a.modality == 'manual_override' %}
+                  <span style="background: #f3e8ff; color: #6b21a8; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700;">⚙️ Manual</span>
                 {% else %}
-                  <span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 600;">✍️ Text</span>
+                  <span style="background: #f1f5f9; color: #334155; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700;">✍️ Text</span>
                 {% endif %}
               </td>
               <td>
@@ -121,7 +185,7 @@
               <td style="font-weight: 600; color: var(--text-main);">
                 {{ a.confidence | round(1) if a.confidence else 85.0 }}%
               </td>
-              <td style="max-width: 340px;">{{ a.description }}</td>
+              <td style="max-width: 320px;">{{ a.description }}</td>
               <td style="color: var(--text-muted); font-size: 0.88rem;">{{ a.recommendation }}</td>
             </tr>
           {% endfor %}
@@ -138,28 +202,30 @@
 
 {% block scripts %}
 <script>
-// Chart.js Doughnut for Cognitive State Distribution
+// Chart.js Doughnut for Cognitive State Distribution (6 States)
 const stateData = {{ state_counts | tojson }};
 const ctx = document.getElementById('stateChart').getContext('2d');
 
 new Chart(ctx, {
   type: 'doughnut',
   data: {
-    labels: ['Focused', 'Motivated', 'Confused', 'Stressed', 'Bored'],
+    labels: ['Focused', 'Motivated', 'Confused', 'Stressed', 'Fatigued', 'Neutral'],
     datasets: [{
       data: [
         stateData['Focused'] || 0,
         stateData['Motivated'] || 0,
         stateData['Confused'] || 0,
         stateData['Stressed'] || 0,
-        stateData['Bored'] || 0
+        stateData['Fatigued'] || 0,
+        stateData['Neutral'] || 0
       ],
       backgroundColor: [
         '#10b981', // Focused
         '#3b82f6', // Motivated
         '#f59e0b', // Confused
         '#ef4444', // Stressed
-        '#9ca3af'  // Bored
+        '#8b5cf6', // Fatigued
+        '#64748b'  // Neutral
       ],
       borderWidth: 2,
       borderColor: '#ffffff'
@@ -178,7 +244,7 @@ new Chart(ctx, {
   }
 });
 
-// Interactive Focus Timer
+// Interactive Pomodoro Focus Timer
 let timerSeconds = 25 * 60;
 let timerInterval = null;
 let isRunning = false;

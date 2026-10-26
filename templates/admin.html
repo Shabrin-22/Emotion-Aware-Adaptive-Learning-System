@@ -248,7 +248,7 @@ const adminCtx = document.getElementById('adminStateChart').getContext('2d');
 new Chart(adminCtx, {
   type: 'bar',
   data: {
-    labels: ['Focused', 'Motivated', 'Confused', 'Stressed', 'Bored'],
+    labels: ['Focused', 'Motivated', 'Confused', 'Stressed', 'Fatigued', 'Neutral'],
     datasets: [{
       label: 'Logged Student States',
       data: [
@@ -256,14 +256,16 @@ new Chart(adminCtx, {
         adminStateData['Motivated'] || 0,
         adminStateData['Confused'] || 0,
         adminStateData['Stressed'] || 0,
-        adminStateData['Bored'] || 0
+        adminStateData['Fatigued'] || 0,
+        adminStateData['Neutral'] || 0
       ],
       backgroundColor: [
         '#10b981',
         '#3b82f6',
         '#f59e0b',
         '#ef4444',
-        '#9ca3af'
+        '#8b5cf6',
+        '#64748b'
       ],
       borderRadius: 6
     }]
