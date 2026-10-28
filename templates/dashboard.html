@@ -214,9 +214,9 @@
           <th>Completed At</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="sessions-tbody">
         {% for s in study_sessions %}
-        <tr>
+        <tr class="sessions-row">
           <td style="font-weight: 700; color: var(--text-muted);">#{{ s.id }}</td>
           <td style="font-weight: 600;">{{ s.topic }}</td>
           <td style="color: var(--accent); font-weight: 700;">{{ s.duration_seconds | format_duration }}</td>
@@ -235,6 +235,22 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
+
+  <!-- Sections / Pagination for Study Sessions (5 items per section) -->
+  <div class="table-section-footer" id="sessions-pagination">
+    <div class="pagination-info" id="sessions-page-info">
+      Showing 1–5 of {{ study_sessions|length }} records
+    </div>
+    <div class="pagination-nav">
+      <button type="button" class="btn btn-secondary btn-sm pagination-btn" id="sessions-prev-btn" onclick="changeTablePage('sessions', -1)">
+        ← Previous 5
+      </button>
+      <div class="pagination-pages" id="sessions-page-numbers"></div>
+      <button type="button" class="btn btn-secondary btn-sm pagination-btn" id="sessions-next-btn" onclick="changeTablePage('sessions', 1)">
+        Next 5 →
+      </button>
+    </div>
   </div>
   {% else %}
   <div style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
@@ -268,9 +284,9 @@
           <th>Adaptive Intervention Strategy</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="activities-tbody">
         {% for a in activities %}
-        <tr>
+        <tr class="activities-row">
           <td style="white-space: nowrap; color: var(--text-muted); font-size: 0.85rem;">{{ a.created_at }}</td>
           <td>
             {% if a.modality == 'webcam' %}
@@ -299,6 +315,22 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
+
+  <!-- Sections / Pagination for Activities (5 items per section) -->
+  <div class="table-section-footer" id="activities-pagination">
+    <div class="pagination-info" id="activities-page-info">
+      Showing 1–5 of {{ activities|length }} records
+    </div>
+    <div class="pagination-nav">
+      <button type="button" class="btn btn-secondary btn-sm pagination-btn" id="activities-prev-btn" onclick="changeTablePage('activities', -1)">
+        ← Previous 5
+      </button>
+      <div class="pagination-pages" id="activities-page-numbers"></div>
+      <button type="button" class="btn btn-secondary btn-sm pagination-btn" id="activities-next-btn" onclick="changeTablePage('activities', 1)">
+        Next 5 →
+      </button>
+    </div>
   </div>
   {% else %}
   <p style="color: var(--text-muted); text-align: center; padding: 30px;">
@@ -430,9 +462,75 @@
     }
   }
 
+  // Table Sectioning & Pagination Logic (5 items per section)
+  const PAGE_SIZE = 5;
+  const tablePages = {
+    sessions: 1,
+    activities: 1
+  };
+
+  function initTablePagination(prefix) {
+    const rows = document.querySelectorAll(`.${prefix}-row`);
+    const totalRows = rows.length;
+    if (totalRows === 0) return;
+
+    const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+    renderTablePage(prefix, 1, totalRows, totalPages);
+  }
+
+  function renderTablePage(prefix, page, totalRows, totalPages) {
+    tablePages[prefix] = page;
+    const rows = document.querySelectorAll(`.${prefix}-row`);
+    const startIdx = (page - 1) * PAGE_SIZE;
+    const endIdx = Math.min(startIdx + PAGE_SIZE, totalRows);
+
+    rows.forEach((row, idx) => {
+      if (idx >= startIdx && idx < endIdx) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    const infoEl = document.getElementById(`${prefix}-page-info`);
+    if (infoEl) {
+      infoEl.innerHTML = `Showing <b>${startIdx + 1}–${endIdx}</b> of <b>${totalRows}</b> records (Section ${page} of ${totalPages})`;
+    }
+
+    const prevBtn = document.getElementById(`${prefix}-prev-btn`);
+    const nextBtn = document.getElementById(`${prefix}-next-btn`);
+    if (prevBtn) prevBtn.disabled = (page <= 1);
+    if (nextBtn) nextBtn.disabled = (page >= totalPages);
+
+    const numbersEl = document.getElementById(`${prefix}-page-numbers`);
+    if (numbersEl) {
+      numbersEl.innerHTML = '';
+      if (totalPages > 1) {
+        for (let p = 1; p <= totalPages; p++) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `btn-page-number ${p === page ? 'active' : ''}`;
+          btn.textContent = p;
+          btn.onclick = () => renderTablePage(prefix, p, totalRows, totalPages);
+          numbersEl.appendChild(btn);
+        }
+      }
+    }
+  }
+
+  function changeTablePage(prefix, delta) {
+    const rows = document.querySelectorAll(`.${prefix}-row`);
+    const totalRows = rows.length;
+    const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+    const newPage = Math.max(1, Math.min(totalPages, (tablePages[prefix] || 1) + delta));
+    renderTablePage(prefix, newPage, totalRows, totalPages);
+  }
+
   // Initial render
   document.addEventListener('DOMContentLoaded', () => {
     renderDonutChart();
+    initTablePagination('sessions');
+    initTablePagination('activities');
   });
 </script>
 {% endblock %}

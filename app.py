@@ -426,7 +426,7 @@ def dashboard():
             """
             SELECT * FROM activities
             WHERE user_id = ?
-            ORDER BY id DESC LIMIT 15
+            ORDER BY id DESC LIMIT 50
             """,
             (user_id,)
         ).fetchall()
@@ -470,7 +470,7 @@ def dashboard():
             """
             SELECT * FROM study_sessions
             WHERE user_id = ?
-            ORDER BY id DESC LIMIT 10
+            ORDER BY id DESC LIMIT 40
             """,
             (user_id,)
         ).fetchall()
