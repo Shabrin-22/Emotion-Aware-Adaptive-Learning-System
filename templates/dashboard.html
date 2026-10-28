@@ -20,9 +20,9 @@
     <a href="{{ url_for('activity') }}" class="btn btn-secondary">
       📸 Multimodal Telemetry
     </a>
-    <a href="{{ url_for('study', setup='1') }}" class="btn btn-primary"
+    <a href="{{ url_for('study', mode='assessment', setup='1') }}" class="btn btn-primary"
       style="box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
-      🚀 Launch Adaptive Assessment
+      📝 Take Adaptive Assessment
     </a>
   </div>
 </div>
@@ -209,8 +209,8 @@
 
     <!-- Quick Action Launchers -->
     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding-top: 14px; border-top: 1px solid var(--border);">
-      <a href="{{ url_for('study', state=dominant_state) }}" class="btn btn-primary btn-sm" style="flex: 2; min-width: 170px; justify-content: center;">
-        🚀 Launch Tailored Study ({{ dominant_state }})
+      <a href="{{ url_for('study', state=dominant_state, tailored='1') }}" class="btn btn-primary btn-sm" style="flex: 2; min-width: 170px; justify-content: center;">
+        ⚡ Launch Tailored Intervention ({{ dominant_state }})
       </a>
       <a href="{{ url_for('activity') }}" class="btn btn-secondary btn-sm" style="flex: 1; min-width: 120px; justify-content: center;">
         📸 New Check-in
@@ -229,7 +229,7 @@
         Persistent Record
       </span>
     </div>
-    <a href="{{ url_for('study', setup='1') }}" class="btn btn-primary btn-sm">+ Start New Assessment</a>
+    <a href="{{ url_for('study', mode='assessment', setup='1') }}" class="btn btn-primary btn-sm">+ Start New Assessment</a>
   </div>
 
   {% if study_sessions %}

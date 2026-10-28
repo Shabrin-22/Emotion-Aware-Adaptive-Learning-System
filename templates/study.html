@@ -161,18 +161,33 @@
 {% else %}
   <!-- ACTIVE ASSESSMENT IN PROGRESS -->
 
-  <!-- Session Progress & Control Bar (DURATION, SCORE, QUESTIONS ANSWERED OF TARGET) -->
+  <!-- Session Progress & Control Bar (DURATION, SCORE, QUESTIONS ANSWERED) -->
   <div class="card" style="margin-bottom: 16px; padding: 16px 20px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; border-radius: var(--radius); box-shadow: var(--shadow-md);">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
       <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
         <!-- Prominent Question Counter -->
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.3rem;">📝</span>
+          <span style="font-size: 1.3rem;">
+            {% if study_mode == 'assessment' %}📝
+            {% elif study_mode == 'tailored' %}⚡
+            {% else %}📖
+            {% endif %}
+          </span>
           <div>
-            <span style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 0.05em;">Assessment Progress</span>
+            <span style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 0.05em;">
+              {% if study_mode == 'assessment' %}Assessment Mode
+              {% elif study_mode == 'tailored' %}Tailored Intervention
+              {% else %}Continuous Study
+              {% endif %}
+            </span>
             <div style="font-size: 1.25rem; font-weight: 800; color: #38bdf8; display: flex; align-items: baseline; gap: 4px;">
-              <span>Question {{ (questions_answered + 1) if not submitted else questions_answered }}</span>
-              <span style="font-size: 0.88rem; color: #94a3b8; font-weight: 600;">of {{ target_questions }}</span>
+              {% if study_mode == 'assessment' and target_questions %}
+                <span>Question {{ (questions_answered + 1) if not submitted else questions_answered }}</span>
+                <span style="font-size: 0.88rem; color: #94a3b8; font-weight: 600;">of {{ target_questions }}</span>
+              {% else %}
+                <span>Checkpoint #{{ (questions_answered + 1) if not submitted else questions_answered }}</span>
+                <span style="font-size: 0.82rem; color: #94a3b8; font-weight: 600;">(Self-Paced)</span>
+              {% endif %}
             </div>
           </div>
         </div>
@@ -202,16 +217,23 @@
 
       <!-- Controls -->
       <div style="display: flex; gap: 8px;">
-        <a href="{{ url_for('study', restart='1') }}" class="btn btn-secondary btn-sm" onclick="return confirm('Restart assessment with a new question count?')" style="background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.2);">
-          ⚙️ Reconfigure
-        </a>
+        {% if study_mode == 'assessment' %}
+          <a href="{{ url_for('study', mode='assessment', setup='1') }}" class="btn btn-secondary btn-sm" onclick="return confirm('Restart assessment with a new question count?')" style="background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.2);">
+            ⚙️ Reconfigure Test
+          </a>
+        {% else %}
+          <a href="{{ url_for('study', mode='assessment', setup='1') }}" class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.2);">
+            📝 Take Graded Test
+          </a>
+        {% endif %}
         <a href="{{ url_for('end_study_session') }}" class="btn btn-secondary btn-sm" onclick="return confirm('End this study session and save current progress to dashboard?')" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(239, 68, 68, 0.3);">
           ⏹️ End & Save
         </a>
       </div>
     </div>
 
-    <!-- Visual Question Progress Bar -->
+    {% if study_mode == 'assessment' and target_questions %}
+    <!-- Visual Question Progress Bar (Assessment Mode Only) -->
     <div style="margin-top: 14px;">
       {% set progress_pct = ((((questions_answered if not submitted else questions_answered) / target_questions) * 100) | round) %}
       <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px;">
@@ -222,6 +244,7 @@
         <div style="width: {{ progress_pct }}%; height: 100%; background: #38bdf8; border-radius: 9999px; transition: width 0.4s ease;"></div>
       </div>
     </div>
+    {% endif %}
   </div>
 
   <!-- Interactive Cognitive State Selector / Adaptation Controls -->

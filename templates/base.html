@@ -25,7 +25,8 @@
             <a href="{{ url_for('admin') }}" class="{% if request.endpoint == 'admin' %}active{% endif %}">Admin Overview</a>
           {% else %}
             <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">Dashboard</a>
-            <a href="{{ url_for('study') }}" class="{% if request.endpoint == 'study' %}active{% endif %}">Adaptive Study</a>
+            <a href="{{ url_for('study', mode='practice') }}" class="{% if request.endpoint == 'study' and (study_mode != 'assessment' and request.args.get('mode') != 'assessment') %}active{% endif %}" title="Self-Paced Learning & Concept Practice">Adaptive Study</a>
+            <a href="{{ url_for('study', mode='assessment', setup='1') }}" class="{% if request.endpoint == 'study' and (study_mode == 'assessment' or request.args.get('mode') == 'assessment') %}active{% endif %}" title="Structured Timed Test">Assessment</a>
           {% endif %}
           <a href="{{ url_for('activity') }}" class="{% if request.endpoint == 'activity' %}active{% endif %}">+ New Reflection / Webcam</a>
 

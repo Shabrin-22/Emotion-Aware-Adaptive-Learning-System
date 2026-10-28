@@ -759,8 +759,26 @@ def study():
 
     user_id = session["user_id"]
 
-    # Check for start of a new assessment or explicit configuration
-    show_setup = False
+    # -------------------------------------------------------------------------
+    # Distinct Pathways Resolution:
+    # 1. 'assessment': Formal test with question count selection (3, 5, 10 or custom), live progress, accuracy evaluation & report
+    # 2. 'tailored': Instant state-calibrated intervention (Focused challenge, Stressed breathing reset, Confused scaffolding)
+    # 3. 'practice': Continuous self-paced study & micro-lessons across topics with no artificial barrier
+    # -------------------------------------------------------------------------
+    if request.args.get("tailored") == "1" or request.args.get("mode") == "tailored":
+        study_mode = "tailored"
+        session["study_mode"] = "tailored"
+        session.pop("study_target_questions", None)
+    elif request.args.get("mode") == "assessment" or request.args.get("setup") == "1":
+        study_mode = "assessment"
+        session["study_mode"] = "assessment"
+    elif request.args.get("mode") == "practice":
+        study_mode = "practice"
+        session["study_mode"] = "practice"
+        session.pop("study_target_questions", None)
+    else:
+        study_mode = session.get("study_mode", "practice")
+
     requested_topic = request.args.get("topic") or request.form.get("topic")
     topic_id = requested_topic if requested_topic in [t["id"] for t in TOPICS] else session.get("study_session_topic", "python")
 
@@ -768,6 +786,8 @@ def study():
         (topic for topic in TOPICS if topic["id"] == topic_id),
         TOPICS[0]
     )
+
+    show_setup = False
 
     # Check if user submitted the Assessment Setup form
     if request.method == "POST" and request.form.get("action") == "start_assessment":
@@ -778,6 +798,8 @@ def study():
             target_q = 5
 
         chosen_topic = request.form.get("topic", topic_id)
+        session["study_mode"] = "assessment"
+        study_mode = "assessment"
         session["study_target_questions"] = target_q
         session["study_session_topic"] = chosen_topic
         session["study_session_start"] = datetime.now().isoformat()
@@ -788,14 +810,12 @@ def study():
         session["study_completed"] = False
         topic_id = chosen_topic
         topic_obj = next((t for t in TOPICS if t["id"] == topic_id), TOPICS[0])
+        show_setup = False
 
-    # If user wants to reset or setup has not been performed yet
-    elif (
-        request.args.get("setup") == "1"
-        or request.args.get("restart") == "1"
-        or "study_target_questions" not in session
-    ):
+    elif study_mode == "assessment" and (request.args.get("setup") == "1" or request.args.get("restart") == "1" or "study_target_questions" not in session):
         show_setup = True
+    else:
+        show_setup = False
 
     # Modeled Cognitive State Resolution
     param_state = request.args.get("state")
@@ -845,12 +865,22 @@ def study():
         )
         session["current_cognitive_state"] = current_state
 
+    # Initialize session start if not already active
+    if "study_session_start" not in session or request.args.get("restart") == "1":
+        session["study_session_start"] = datetime.now().isoformat()
+        session["study_session_topic"] = topic_id
+        session["study_questions_answered"] = 0
+        session["study_score"] = 0
+        session["study_correct_count"] = 0
+        session["study_states_seen"] = []
+
     # If setup mode is active, render the setup card immediately
     if show_setup:
         intervention = get_adaptive_intervention(current_state, 88.0)
         return render_template(
             "study.html",
             show_setup=True,
+            study_mode=study_mode,
             topics=TOPICS,
             selected_topic=topic_id,
             current_state=current_state,
@@ -863,7 +893,7 @@ def study():
     states_seen.append(current_state)
     session["study_states_seen"] = states_seen
 
-    target_questions = session.get("study_target_questions", 5)
+    target_questions = session.get("study_target_questions") if study_mode == "assessment" else None
     questions_answered = session.get("study_questions_answered", 0)
 
     start_dt = datetime.fromisoformat(
@@ -872,13 +902,14 @@ def study():
     elapsed_sec = int((datetime.now() - start_dt).total_seconds())
 
     # Check if assessment is already completed and user refreshed or ended
-    if questions_answered >= target_questions and request.method == "GET" and not request.args.get("state"):
+    if study_mode == "assessment" and target_questions and questions_answered >= target_questions and request.method == "GET" and not request.args.get("state"):
         intervention = get_adaptive_intervention(current_state, 88.0)
         lesson = get_adaptive_lesson(topic_id, current_state)
         return render_template(
             "study.html",
             show_setup=False,
             is_completed=True,
+            study_mode=study_mode,
             topics=TOPICS,
             selected_topic=topic_id,
             current_state=current_state,
@@ -1005,12 +1036,13 @@ def study():
                     topic_id, current_state_input
                 )
 
-                is_completed = (answered >= target_questions)
+                is_completed = (study_mode == "assessment" and target_questions is not None and answered >= target_questions)
 
                 return render_template(
                     "study.html",
                     show_setup=False,
                     is_completed=is_completed,
+                    study_mode=study_mode,
                     topics=TOPICS,
                     selected_topic=topic_id,
                     current_state=current_state_input,
@@ -1053,6 +1085,7 @@ def study():
         "study.html",
         show_setup=False,
         is_completed=False,
+        study_mode=study_mode,
         topics=TOPICS,
         selected_topic=topic_id,
         current_state=current_state,
