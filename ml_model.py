@@ -16,13 +16,17 @@ VEC_PATH = os.path.join(MODELS_DIR, "vectorizer.pkl")
 _model = None
 _vectorizer = None
 
+
 def _load_artifacts():
     global _model, _vectorizer
+
     if _model is None or _vectorizer is None:
         if not (os.path.exists(MODEL_PATH) and os.path.exists(VEC_PATH)):
-            # If not yet trained, train now
-            import train_model
-            train_model.train_and_evaluate()
+            raise FileNotFoundError(
+                "Model files are missing. Please provide the trained "
+                "model and vectorizer files."
+            )
+
         _model = joblib.load(MODEL_PATH)
         _vectorizer = joblib.load(VEC_PATH)
 
