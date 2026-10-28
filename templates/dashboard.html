@@ -1,301 +1,438 @@
 {% extends "base.html" %}
-{% block title %}Learner Dashboard - Emotion-Aware Adaptive Learning (2026MIN198){% endblock %}
+{% block title %}Learner Analytics & Cognitive Hub - Emotion-Aware Adaptive Learning{% endblock %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+<!-- Top Header & Actions -->
+<div class="dashboard-hero-header">
   <div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <h1 style="font-size: 1.8rem; font-weight: 800;">Learner Analytics & Cognitive Hub</h1>
-      <span style="background: #e0e7ff; color: #3730a3; padding: 3px 10px; border-radius: 9999px; font-size: 0.78rem; font-weight: 700;">Project 2026MIN198</span>
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <h1 style="font-size: 1.85rem; font-weight: 800; color: var(--text-main); margin: 0;">
+        Cognitive Analytics & Adaptive Learning Hub
+      </h1>
+      <span class="badge-accent">Active Session</span>
     </div>
-    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 4px;">
-      Real-time cognitive state modeling, genuine adaptive content recommendations, and productivity tracking for <b>{{ session.get('name') }}</b>.
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 6px;">
+      Real-time multimodal cognitive modeling, state-driven pedagogical interventions, and productivity analytics for
+      <b>{{ session.get('name') }}</b>.
     </p>
   </div>
-  <div style="display: flex; gap: 10px;">
+  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
     <a href="{{ url_for('activity') }}" class="btn btn-secondary">
-      📸 Multimodal Reflection & Telemetry
+      📸 Multimodal Telemetry
     </a>
-    <a href="{{ url_for('study', restart='1') }}" class="btn btn-primary">
-      🚀 Start Adaptive Study Session
+    <a href="{{ url_for('study', setup='1') }}" class="btn btn-primary"
+      style="box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
+      🚀 Launch Adaptive Assessment
     </a>
   </div>
 </div>
 
-<!-- 5 KPI Metrics -->
-<div class="grid-cols-4" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
-  <div class="stat-card">
-    <span class="stat-label">Total Reflections</span>
+<!-- 4 Executive KPI Metrics Cards -->
+<div class="grid-cols-4">
+  <div class="stat-card kpi-focused">
+    <div class="stat-header">
+      <span class="stat-label">Total Telemetry Reflections</span>
+      <span class="stat-icon-badge">📝</span>
+    </div>
     <span class="stat-value">{{ total_activities }}</span>
-    <span class="stat-sub">Across text, telemetry & manual</span>
+    <span class="stat-sub">Across text, telemetry & camera</span>
   </div>
 
-  <div class="stat-card">
-    <span class="stat-label">Dominant Cognitive State</span>
-    <div style="margin-top: 6px;">
+  <div class="stat-card kpi-state">
+    <div class="stat-header">
+      <span class="stat-label">Dominant Cognitive State</span>
+      <span class="stat-icon-badge">🧠</span>
+    </div>
+    <div style="margin: 4px 0;">
       <span class="state-badge {{ dominant_state }}" style="font-size: 1.05rem; padding: 6px 14px;">
-        {{ dominant_state }}
+        ● {{ dominant_state }}
       </span>
     </div>
-    <span class="stat-sub" style="margin-top: 8px;">Primary state across sessions</span>
+    <span class="stat-sub">Primary state modeled across activities</span>
   </div>
 
-  <div class="stat-card">
-    <span class="stat-label">Productivity & Flow Score</span>
+  <div class="stat-card kpi-flow">
+    <div class="stat-header">
+      <span class="stat-label">Productivity & Flow Score</span>
+      <span class="stat-icon-badge">⚡</span>
+    </div>
     <span class="stat-value" style="color: #10b981;">{{ productivity_score }}%</span>
-    <span class="stat-sub">Ratio of Focused & Motivated work</span>
+    <span class="stat-sub">Ratio of Focused & Motivated work blocks</span>
   </div>
 
-  <div class="stat-card">
-    <span class="stat-label">Total Study Time</span>
-    <span class="stat-value" style="color: #3b82f6;">⏱️ {{ total_study_seconds | format_duration }}</span>
-    <span class="stat-sub">{{ total_sessions_completed }} completed sessions recorded</span>
+  <div class="stat-card kpi-time">
+    <div class="stat-header">
+      <span class="stat-label">Cumulative Study Time</span>
+      <span class="stat-icon-badge">⏱️</span>
+    </div>
+    <span class="stat-value" style="color: #2563eb;">{{ total_study_seconds | format_duration }}</span>
+    <span class="stat-sub">{{ total_sessions_completed }} completed sessions logged</span>
   </div>
 </div>
 
-<!-- Charts & Interactive Focus Timer Grid -->
+<!-- Modern Visual Analytics & Adaptive Focus Timer Grid -->
 <div class="grid-cols-2">
-  <!-- Chart Card -->
-  <div class="card">
-    <div class="card-header">
-      <h2 class="card-title"><span>📊</span> Cognitive State Distribution</h2>
-      <span style="font-size: 0.8rem; color: var(--text-muted);">Historical Aggregates (6 States)</span>
+  <!-- UPGRADED EXECUTIVE CHART CARD -->
+  <div class="card" style="box-shadow: var(--shadow-md);">
+    <div class="card-header" style="flex-wrap: wrap; gap: 8px;">
+      <div>
+        <h2 class="card-title">
+          <span>📊</span> Cognitive State Dynamics & Distribution
+        </h2>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">
+          Real-time proportion across all 6 cognitive states
+        </span>
+      </div>
+
+      <!-- Interactive Chart View Switcher Tabs -->
+      <div class="chart-view-toggle">
+        <button type="button" class="chart-toggle-btn active" id="btn-view-donut" onclick="switchChartView('donut')">
+          🍩 Donut Gauge
+        </button>
+        <button type="button" class="chart-toggle-btn" id="btn-view-bar" onclick="switchChartView('bar')">
+          📊 Proportions
+        </button>
+      </div>
     </div>
-    <div style="height: 280px; position: relative;">
+
+    <!-- Chart Container with Center Total Overlay for Donut -->
+    <div style="position: relative; height: 260px; padding: 6px 0;">
       <canvas id="stateChart"></canvas>
+      <div id="chart-center-metric" class="chart-donut-center">
+        <span class="center-metric-number">{{ total_activities }}</span>
+        <span class="center-metric-label">Inferences</span>
+      </div>
+    </div>
+
+    <!-- Clean Modern Pill Legend with Percentages -->
+    <div class="chart-pill-legend" id="chart-legend-container">
+      {% set total = total_activities if total_activities > 0 else 1 %}
+      <div class="legend-pill" style="border-left: 3px solid #10b981;">
+        <span class="legend-dot" style="background: #10b981;"></span>
+        <span class="legend-name">Focused</span>
+        <span class="legend-pct">{{ ((state_counts.get('Focused', 0) / total) * 100) | round | int }}%</span>
+      </div>
+      <div class="legend-pill" style="border-left: 3px solid #3b82f6;">
+        <span class="legend-dot" style="background: #3b82f6;"></span>
+        <span class="legend-name">Motivated</span>
+        <span class="legend-pct">{{ ((state_counts.get('Motivated', 0) / total) * 100) | round | int }}%</span>
+      </div>
+      <div class="legend-pill" style="border-left: 3px solid #f59e0b;">
+        <span class="legend-dot" style="background: #f59e0b;"></span>
+        <span class="legend-name">Confused</span>
+        <span class="legend-pct">{{ ((state_counts.get('Confused', 0) / total) * 100) | round | int }}%</span>
+      </div>
+      <div class="legend-pill" style="border-left: 3px solid #ef4444;">
+        <span class="legend-dot" style="background: #ef4444;"></span>
+        <span class="legend-name">Stressed</span>
+        <span class="legend-pct">{{ ((state_counts.get('Stressed', 0) / total) * 100) | round | int }}%</span>
+      </div>
+      <div class="legend-pill" style="border-left: 3px solid #8b5cf6;">
+        <span class="legend-dot" style="background: #8b5cf6;"></span>
+        <span class="legend-name">Fatigued</span>
+        <span class="legend-pct">{{ ((state_counts.get('Fatigued', 0) / total) * 100) | round | int }}%</span>
+      </div>
+      <div class="legend-pill" style="border-left: 3px solid #64748b;">
+        <span class="legend-dot" style="background: #64748b;"></span>
+        <span class="legend-name">Neutral</span>
+        <span class="legend-pct">{{ ((state_counts.get('Neutral', 0) / total) * 100) | round | int }}%</span>
+      </div>
     </div>
   </div>
 
-  <!-- Pomodoro Deep Work Focus Timer -->
-  <div class="card pomodoro-box">
+  <!-- Pomodoro Deep Work Focus Timer (Synchronized with Global Timer) -->
+  <div class="card pomodoro-box" style="box-shadow: var(--shadow-md);">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h2 style="font-size: 1.25rem; font-weight: 700;">⏱️ Adaptive Focus Timer</h2>
-      <span style="background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">Pomodoro Protocol</span>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.3rem;">⏱️</span>
+        <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0;">Adaptive Focus Timer</h2>
+      </div>
+      <button type="button" class="btn btn-sm" onclick="openPomodoroModal()"
+        style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2); font-size: 0.78rem;">
+        ⚙️ Config Time
+      </button>
     </div>
+
     <p style="color: #94a3b8; font-size: 0.88rem; margin-top: 6px;">
-      Synchronized with your cognitive state to optimize study intervals and automated break reminders.
+      Synchronized across all pages. Configured to automatically suggest restorative breaks when mental fatigue or
+      stress is detected.
     </p>
 
-    <div class="pomodoro-time" id="timer-display">25:00</div>
-
-    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
-      <button class="btn btn-primary" id="timer-start" onclick="toggleTimer()">Start Focus</button>
-      <button class="btn btn-secondary" onclick="resetTimer()">Reset</button>
-      <button class="btn btn-secondary" onclick="setTimer(5)">5m Rest</button>
+    <div class="pomodoro-time" id="timer-display" style="cursor: pointer;" onclick="openPomodoroModal()"
+      title="Click to configure duration">
+      25:00
     </div>
 
-    <div style="margin-top: 18px; padding: 12px; background: rgba(255,255,255,0.08); border-radius: 8px; font-size: 0.82rem; text-align: left;">
-      <p>💡 <b>Adaptive Trigger:</b> When <i>Stressed</i> or <i>Fatigued</i> states are modeled, the system recommends a restorative break or 4-7-8 breathing reset.</p>
+    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px; flex-wrap: wrap;">
+      <button class="btn btn-primary" id="timer-start" onclick="toggleGlobalTimer()"
+        style="min-width: 140px; padding: 10px 20px;">
+        Start Focus
+      </button>
+      <button class="btn btn-secondary" onclick="resetGlobalTimer()" style="padding: 10px 18px;">
+        Reset
+      </button>
+      <button class="btn btn-secondary" onclick="setTimerMode('break', 5)" style="padding: 10px 18px;">
+        ☕ 5m Rest
+      </button>
+    </div>
+
+    <div
+      style="margin-top: 18px; padding: 12px 14px; background: rgba(255,255,255,0.08); border-radius: 8px; font-size: 0.82rem; text-align: left; border-left: 3px solid #38bdf8;">
+      <p style="margin: 0;">
+        💡 <b>Adaptive Trigger:</b> When <i>Stressed</i> or <i>Fatigued</i> states are modeled, the system recommends a
+        restorative break or 4-7-8 breathing reset.
+      </p>
     </div>
   </div>
 </div>
 
 <!-- Persistent Study Sessions History Table -->
-<div class="card">
+<div class="card" style="box-shadow: var(--shadow-sm);">
   <div class="card-header">
     <div style="display: flex; align-items: center; gap: 8px;">
-      <h2 class="card-title"><span>📚</span> Study Sessions History</h2>
-      <span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700;">Persistent Tracking</span>
+      <h2 class="card-title"><span>📚</span> Study Sessions & Assessment History</h2>
+      <span
+        style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700;">
+        Persistent Record
+      </span>
     </div>
-    <a href="{{ url_for('study', restart='1') }}" class="btn btn-primary btn-sm">+ Start New Session</a>
+    <a href="{{ url_for('study', setup='1') }}" class="btn btn-primary btn-sm">+ Start New Assessment</a>
   </div>
 
   {% if study_sessions %}
-    <div class="table-responsive">
-      <table>
-        <thead>
-          <tr>
-            <th>Session #</th>
-            <th>Topic</th>
-            <th>Duration</th>
-            <th>Questions Answered</th>
-            <th>Score Earned</th>
-            <th>Dominant State</th>
-            <th>Status</th>
-            <th>Completed At</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in study_sessions %}
-            <tr>
-              <td style="font-weight: 700; color: var(--text-muted);">#{{ s.id }}</td>
-              <td style="font-weight: 600;">{{ s.topic }}</td>
-              <td style="color: var(--accent); font-weight: 700;">{{ s.duration_seconds | format_duration }}</td>
-              <td>{{ s.total_questions }} questions</td>
-              <td style="color: #10b981; font-weight: 700;">+{{ s.score }} XP</td>
-              <td>
-                <span class="state-badge {{ s.dominant_state }}">{{ s.dominant_state }}</span>
-              </td>
-              <td>
-                <span style="background: #ecfdf5; color: #047857; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700;">✓ Completed</span>
-              </td>
-              <td style="white-space: nowrap; color: var(--text-muted); font-size: 0.85rem;">{{ s.created_at }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Session #</th>
+          <th>Topic Domain</th>
+          <th>Duration</th>
+          <th>Questions Completed</th>
+          <th>Score Earned</th>
+          <th>Dominant State</th>
+          <th>Status</th>
+          <th>Completed At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in study_sessions %}
+        <tr>
+          <td style="font-weight: 700; color: var(--text-muted);">#{{ s.id }}</td>
+          <td style="font-weight: 600;">{{ s.topic }}</td>
+          <td style="color: var(--accent); font-weight: 700;">{{ s.duration_seconds | format_duration }}</td>
+          <td>{{ s.total_questions }} questions</td>
+          <td style="color: #10b981; font-weight: 700;">+{{ s.score }} XP</td>
+          <td>
+            <span class="state-badge {{ s.dominant_state }}">{{ s.dominant_state }}</span>
+          </td>
+          <td>
+            <span
+              style="background: #ecfdf5; color: #047857; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700;">✓
+              Completed</span>
+          </td>
+          <td style="white-space: nowrap; color: var(--text-muted); font-size: 0.85rem;">{{ s.created_at }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
-    <div style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
-      <p style="font-size: 1.1rem; font-weight: 600;">No study sessions completed yet.</p>
-      <p style="font-size: 0.9rem; margin-top: 4px;">Click the button below to begin your first adaptive study block!</p>
-      <a href="{{ url_for('study', restart='1') }}" class="btn btn-primary" style="margin-top: 14px;">
-        🚀 Launch Study Session
-      </a>
-    </div>
+  <div style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
+    <p style="font-size: 1.1rem; font-weight: 600;">No study sessions completed yet.</p>
+    <p style="font-size: 0.9rem; margin-top: 4px;">Click the button below to configure your first adaptive assessment
+      block!</p>
+    <a href="{{ url_for('study', setup='1') }}" class="btn btn-primary" style="margin-top: 14px;">
+      🚀 Launch Adaptive Assessment
+    </a>
+  </div>
   {% endif %}
 </div>
 
 <!-- Recent Activities Table -->
-<div class="card">
+<div class="card" style="box-shadow: var(--shadow-sm);">
   <div class="card-header">
-    <h2 class="card-title"><span>📝</span> Recent Cognitive Reflections & Telemetry</h2>
+    <h2 class="card-title"><span>📝</span> Recent Cognitive Reflections & Multimodal Telemetry</h2>
     <a href="{{ url_for('activity') }}" class="btn btn-outline btn-sm">+ Log New State</a>
   </div>
 
   {% if activities %}
-    <div class="table-responsive">
-      <table>
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Modality</th>
-            <th>Cognitive State</th>
-            <th>Confidence</th>
-            <th>Learner Reflection / Telemetry</th>
-            <th>Adaptive Recommendation</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for a in activities %}
-            <tr>
-              <td style="white-space: nowrap; color: var(--text-muted); font-size: 0.85rem;">{{ a.created_at }}</td>
-              <td>
-                {% if a.modality == 'webcam' %}
-                  <span style="background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700;">📹 Webcam</span>
-                {% elif a.modality == 'manual_override' %}
-                  <span style="background: #f3e8ff; color: #6b21a8; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700;">⚙️ Manual</span>
-                {% else %}
-                  <span style="background: #f1f5f9; color: #334155; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700;">✍️ Text</span>
-                {% endif %}
-              </td>
-              <td>
-                <span class="state-badge {{ a.state }}">{{ a.state }}</span>
-              </td>
-              <td style="font-weight: 600; color: var(--text-main);">
-                {{ a.confidence | round(1) if a.confidence else 85.0 }}%
-              </td>
-              <td style="max-width: 320px;">{{ a.description }}</td>
-              <td style="color: var(--text-muted); font-size: 0.88rem;">{{ a.recommendation }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Modality</th>
+          <th>Cognitive State</th>
+          <th>Confidence</th>
+          <th>Learner Reflection / Telemetry</th>
+          <th>Adaptive Intervention Strategy</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in activities %}
+        <tr>
+          <td style="white-space: nowrap; color: var(--text-muted); font-size: 0.85rem;">{{ a.created_at }}</td>
+          <td>
+            {% if a.modality == 'webcam' %}
+            <span
+              style="background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700;">📹
+              Webcam</span>
+            {% elif a.modality == 'manual_override' %}
+            <span
+              style="background: #f3e8ff; color: #6b21a8; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700;">⚙️
+              Manual</span>
+            {% else %}
+            <span
+              style="background: #f1f5f9; color: #334155; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700;">✍️
+              Text</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="state-badge {{ a.state }}">{{ a.state }}</span>
+          </td>
+          <td style="font-weight: 600; color: var(--text-main);">
+            {{ a.confidence | round(1) if a.confidence else 85.0 }}%
+          </td>
+          <td style="max-width: 320px;">{{ a.description }}</td>
+          <td style="color: var(--text-muted); font-size: 0.88rem;">{{ a.recommendation }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
-    <p style="color: var(--text-muted); text-align: center; padding: 30px;">
-      No cognitive activities logged yet. Click "+ Log New State" or "Start Adaptive Study" to begin!
-    </p>
+  <p style="color: var(--text-muted); text-align: center; padding: 30px;">
+    No cognitive activities logged yet. Click "+ Log New State" or "Launch Adaptive Assessment" to begin!
+  </p>
   {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Chart.js Doughnut for Cognitive State Distribution (6 States)
-const stateData = {{ state_counts | tojson }};
-const ctx = document.getElementById('stateChart').getContext('2d');
+  // Upgraded High-Resolution Chart.js Visualizer
+  const stateData = {{ state_counts | tojson }};
+  const stateLabels = ['Focused', 'Motivated', 'Confused', 'Stressed', 'Fatigued', 'Neutral'];
+  const stateColors = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b'];
 
-new Chart(ctx, {
-  type: 'doughnut',
-  data: {
-    labels: ['Focused', 'Motivated', 'Confused', 'Stressed', 'Fatigued', 'Neutral'],
-    datasets: [{
-      data: [
-        stateData['Focused'] || 0,
-        stateData['Motivated'] || 0,
-        stateData['Confused'] || 0,
-        stateData['Stressed'] || 0,
-        stateData['Fatigued'] || 0,
-        stateData['Neutral'] || 0
-      ],
-      backgroundColor: [
-        '#10b981', // Focused
-        '#3b82f6', // Motivated
-        '#f59e0b', // Confused
-        '#ef4444', // Stressed
-        '#8b5cf6', // Fatigued
-        '#64748b'  // Neutral
-      ],
-      borderWidth: 2,
-      borderColor: '#ffffff'
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: { font: { size: 12 }, padding: 14 }
+  const chartDataValues = stateLabels.map(label => stateData[label] || 0);
+
+  const ctx = document.getElementById('stateChart').getContext('2d');
+  let currentChart = null;
+
+  function renderDonutChart() {
+    if (currentChart) currentChart.destroy();
+    const centerEl = document.getElementById('chart-center-metric');
+    if (centerEl) centerEl.style.display = 'flex';
+
+    currentChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: stateLabels,
+        datasets: [{
+          data: chartDataValues,
+          backgroundColor: stateColors,
+          borderWidth: 3,
+          borderColor: '#ffffff',
+          hoverBorderWidth: 4,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        animation: {
+          animateScale: true,
+          animateRotate: true,
+          duration: 800
+        },
+        plugins: {
+          legend: {
+            display: false // Managed through our custom modern pill legend
+          },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            titleFont: { size: 13, weight: 'bold' },
+            bodyFont: { size: 12 },
+            padding: 12,
+            cornerRadius: 8,
+            boxPadding: 6,
+            callbacks: {
+              label: function (context) {
+                const val = context.raw || 0;
+                const sum = context.dataset.data.reduce((a, b) => a + b, 0) || 1;
+                const pct = Math.round((val / sum) * 100);
+                return ` ${context.label}: ${val} logs (${pct}%)`;
+              }
+            }
+          }
+        }
       }
-    },
-    cutout: '65%'
+    });
   }
-});
 
-// Interactive Pomodoro Focus Timer
-let timerSeconds = 25 * 60;
-let timerInterval = null;
-let isRunning = false;
+  function renderBarChart() {
+    if (currentChart) currentChart.destroy();
+    const centerEl = document.getElementById('chart-center-metric');
+    if (centerEl) centerEl.style.display = 'none';
 
-function formatTime(s) {
-  const m = Math.floor(s / 60).toString().padStart(2, '0');
-  const sec = (s % 60).toString().padStart(2, '0');
-  return `${m}:${sec}`;
-}
-
-function updateDisplay() {
-  document.getElementById('timer-display').textContent = formatTime(timerSeconds);
-}
-
-function toggleTimer() {
-  const btn = document.getElementById('timer-start');
-  if (isRunning) {
-    clearInterval(timerInterval);
-    isRunning = false;
-    btn.textContent = 'Resume Focus';
-  } else {
-    isRunning = true;
-    btn.textContent = 'Pause';
-    timerInterval = setInterval(() => {
-      if (timerSeconds > 0) {
-        timerSeconds--;
-        updateDisplay();
-      } else {
-        clearInterval(timerInterval);
-        isRunning = false;
-        btn.textContent = 'Start Focus';
-        alert('🎉 Focus block completed! Time for a short restorative break.');
+    currentChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: stateLabels,
+        datasets: [{
+          label: 'Activity Logs',
+          data: chartDataValues,
+          backgroundColor: stateColors,
+          borderRadius: 8,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y', // Horizontal modern bars
+        scales: {
+          x: {
+            grid: { color: 'rgba(226, 232, 240, 0.6)' },
+            ticks: { font: { size: 11 }, precision: 0 }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { font: { size: 12, weight: 'bold' } }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            padding: 10,
+            cornerRadius: 8
+          }
+        }
       }
-    }, 1000);
+    });
   }
-}
 
-function resetTimer() {
-  clearInterval(timerInterval);
-  isRunning = false;
-  timerSeconds = 25 * 60;
-  updateDisplay();
-  document.getElementById('timer-start').textContent = 'Start Focus';
-}
+  function switchChartView(view) {
+    const btnDonut = document.getElementById('btn-view-donut');
+    const btnBar = document.getElementById('btn-view-bar');
 
-function setTimer(minutes) {
-  clearInterval(timerInterval);
-  isRunning = false;
-  timerSeconds = minutes * 60;
-  updateDisplay();
-  document.getElementById('timer-start').textContent = 'Start Break';
-}
+    if (view === 'donut') {
+      if (btnDonut) btnDonut.classList.add('active');
+      if (btnBar) btnBar.classList.remove('active');
+      renderDonutChart();
+    } else {
+      if (btnDonut) btnDonut.classList.remove('active');
+      if (btnBar) btnBar.classList.add('active');
+      renderBarChart();
+    }
+  }
+
+  // Initial render
+  document.addEventListener('DOMContentLoaded', () => {
+    renderDonutChart();
+  });
 </script>
 {% endblock %}

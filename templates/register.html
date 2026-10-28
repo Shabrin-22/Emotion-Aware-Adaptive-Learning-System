@@ -1,37 +1,48 @@
 {% extends "base.html" %}
-{% block title %}Register - Emotion-Aware Adaptive Learning{% endblock %}
+{% block title %}Create Account - Emotion-Aware Adaptive Learning & Productivity System{% endblock %}
 
 {% block content %}
 <div class="auth-wrapper">
   <div class="auth-card">
     <div class="auth-header">
-      <span style="font-size: 2.5rem;">✨</span>
+      <div class="auth-icon-circle">
+        <span>✨</span>
+      </div>
       <h1>Create Account</h1>
-      <p style="color: var(--text-muted); font-size: 0.9rem;">Join the adaptive learning platform and optimize your productivity.</p>
+      <p class="auth-subtitle">Join the adaptive learning platform to optimize your study focus and cognitive performance.</p>
     </div>
 
-    <form method="post" action="{{ url_for('register') }}">
+    <form method="post" action="{{ url_for('register') }}" class="auth-form">
       <div class="form-group">
         <label for="name">Full Name</label>
-        <input type="text" id="name" name="name" placeholder="John Doe" required autofocus>
+        <input type="text" id="name" name="name" placeholder="Alex Morgan" required autofocus autocomplete="name">
       </div>
 
       <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" placeholder="john@example.com" required>
+        <label for="email">Academic / Work Email</label>
+        <input type="email" id="email" name="email" placeholder="alex@domain.edu" required autocomplete="email">
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="••••••••" required>
+        <label for="password">Create Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="new-password">
       </div>
 
-      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Register Account</button>
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top: 12px; padding: 12px 20px; font-size: 0.95rem;">
+        <span>Complete Registration</span>
+        <span style="font-size: 1.1rem; line-height: 1;">→</span>
+      </button>
     </form>
 
-    <p style="text-align: center; margin-top: 20px; font-size: 0.88rem; color: var(--text-muted);">
-      Already have an account? <a href="{{ url_for('login') }}" style="color: var(--accent); font-weight: 600;">Sign In</a>
-    </p>
+    <div class="auth-divider">
+      <span>Already Enrolled?</span>
+    </div>
+
+    <div class="auth-footer-notes">
+      <p style="text-align: center; margin-top: 12px; font-size: 0.88rem; color: var(--text-muted);">
+        Already have an account? <a href="{{ url_for('login') }}" style="color: var(--accent); font-weight: 600; text-decoration: none;">Sign In</a>
+      </p>
+    </div>
   </div>
 </div>
 {% endblock %}

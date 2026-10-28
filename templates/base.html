@@ -13,8 +13,10 @@
     <div class="nav-container">
       <a href="{{ url_for('index') }}" class="brand">
         <span class="brand-icon">🧠</span>
-        <span>EmotionAware <span style="font-weight: 300; opacity: 0.85;">Adaptive</span></span>
-        <span style="font-size: 0.72rem; background: rgba(255,255,255,0.15); padding: 2px 7px; border-radius: 4px; font-weight: 600; margin-left: 6px;">2026MIN198</span>
+        <div class="brand-text-group">
+          <span class="brand-title">EmotionAware <span class="brand-sub">Adaptive</span></span>
+          <span class="brand-badge">Cognitive AI</span>
+        </div>
       </a>
 
       <nav class="nav-links">
@@ -27,13 +29,25 @@
           {% endif %}
           <a href="{{ url_for('activity') }}" class="{% if request.endpoint == 'activity' %}active{% endif %}">+ New Reflection / Webcam</a>
 
+          <!-- Accessible Pomodoro Nav Pill -->
+          <button type="button" class="nav-pomo-btn" id="nav-pomo-btn" onclick="openPomodoroModal()" title="Configure Focus & Productivity Timer">
+            <span class="pomo-pulse-indicator" id="nav-pomo-pulse"></span>
+            <span>⏱️</span>
+            <span id="nav-pomo-text" style="font-weight: 700; font-family: monospace;">Focus Timer</span>
+          </button>
+
           <div class="user-badge">
-            <span>{{ session.get('name') }}</span>
+            <span class="user-avatar-circle">{{ session.get('name', 'U')[0] }}</span>
+            <span class="user-name-text">{{ session.get('name') }}</span>
             <span class="role-tag {{ session.get('role') }}">{{ session.get('role') }}</span>
           </div>
 
-          <a href="{{ url_for('logout') }}" style="color: #f87171;">Logout</a>
+          <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
         {% else %}
+          <button type="button" class="nav-pomo-btn" onclick="openPomodoroModal()" title="Configure Focus & Productivity Timer">
+            <span>⏱️</span>
+            <span id="nav-pomo-text" style="font-weight: 700; font-family: monospace;">Focus Timer</span>
+          </button>
           <a href="{{ url_for('login') }}" class="{% if request.endpoint == 'login' %}active{% endif %}">Login</a>
           <a href="{{ url_for('register') }}" class="{% if request.endpoint == 'register' %}active{% endif %}">Register</a>
         {% endif %}
@@ -47,7 +61,7 @@
         <div class="flash-container">
           {% for m in messages %}
             <div class="flash-message">
-              <span>🔔</span>
+              <span class="flash-icon">🔔</span>
               <span>{{ m }}</span>
             </div>
           {% endfor %}
@@ -58,9 +72,410 @@
     {% block content %}{% endblock %}
   </main>
 
+  <!-- Non-intrusive Persistent Floating Pomodoro Pill (Visible across all pages once active) -->
+  <div id="floating-pomo-pill" class="floating-pomo-pill hidden" aria-live="polite">
+    <div class="pomo-pill-drag-area" onclick="openPomodoroModal()" title="Open Timer Configuration">
+      <span class="pomo-active-dot"></span>
+      <span id="floating-pill-icon">🎯</span>
+      <span id="floating-pill-time" class="pomo-pill-digits">25:00</span>
+    </div>
+    <div class="pomo-pill-actions">
+      <button type="button" class="pomo-icon-btn" id="floating-pill-play" onclick="toggleGlobalTimer(event)" title="Pause / Resume Timer">
+        ⏸
+      </button>
+      <button type="button" class="pomo-icon-btn" onclick="openPomodoroModal(event)" title="Configure Time & Modes">
+        ⚙️
+      </button>
+      <button type="button" class="pomo-icon-btn" onclick="dismissPill(event)" title="Hide Widget">
+        ✕
+      </button>
+    </div>
+  </div>
+
+  <!-- Configurable Pomodoro Modal / Popover -->
+  <div class="modal-overlay" id="pomodoro-modal" onclick="if(event.target === this) closePomodoroModal()">
+    <div class="modal-content pomo-modal-box">
+      <div class="pomo-modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.6rem;">⏱️</span>
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0;">Adaptive Focus & Pomodoro Timer</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">Synchronized across all pages to optimize cognitive work intervals</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-x" onclick="closePomodoroModal()">✕</button>
+      </div>
+
+      <!-- Mode Selector -->
+      <div class="pomo-mode-tabs">
+        <button type="button" class="pomo-mode-btn active" id="pomo-tab-focus" onclick="setTimerMode('focus')">
+          🎯 Focus Session
+        </button>
+        <button type="button" class="pomo-mode-btn" id="pomo-tab-break" onclick="setTimerMode('break')">
+          ☕ Restorative Break
+        </button>
+      </div>
+
+      <!-- Live Clock Display -->
+      <div class="pomo-clock-wrap">
+        <div class="pomo-clock-digits" id="modal-timer-display">25:00</div>
+        <div class="pomo-mode-status" id="modal-timer-mode-label">Deep Work Focus Block</div>
+        <div class="pomo-progress-track">
+          <div class="pomo-progress-bar" id="modal-progress-bar" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <!-- Quick Preset Chips & Custom Duration Input -->
+      <div class="pomo-config-section">
+        <label style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; display: block;">
+          Select or Configure Duration:
+        </label>
+        
+        <div class="pomo-chip-grid" id="focus-preset-chips">
+          <button type="button" class="pomo-preset-chip" onclick="applyPresetMinutes(15)">15 min</button>
+          <button type="button" class="pomo-preset-chip active" onclick="applyPresetMinutes(25)">25 min (Standard)</button>
+          <button type="button" class="pomo-preset-chip" onclick="applyPresetMinutes(45)">45 min (Deep Work)</button>
+          <button type="button" class="pomo-preset-chip" onclick="applyPresetMinutes(50)">50 min</button>
+        </div>
+
+        <div class="pomo-chip-grid hidden" id="break-preset-chips">
+          <button type="button" class="pomo-preset-chip active" onclick="applyPresetMinutes(5)">5 min (Quick Reset)</button>
+          <button type="button" class="pomo-preset-chip" onclick="applyPresetMinutes(10)">10 min (Rest Walk)</button>
+          <button type="button" class="pomo-preset-chip" onclick="applyPresetMinutes(15)">15 min (Extended Break)</button>
+        </div>
+
+        <!-- Custom minute configuration -->
+        <div style="display: flex; gap: 8px; align-items: center; margin-top: 12px;">
+          <input type="number" id="pomo-custom-input" min="1" max="180" placeholder="Custom mins (e.g. 30)" class="pomo-input-sm">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="applyCustomMinutes()" style="white-space: nowrap;">
+            Apply Custom
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="pomo-modal-actions">
+        <button type="button" class="btn btn-primary" id="modal-timer-start-btn" onclick="toggleGlobalTimer()" style="flex: 2; padding: 12px;">
+          Start Focus
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="resetGlobalTimer()" style="flex: 1; padding: 12px;">
+          Reset
+        </button>
+      </div>
+
+      <div class="pomo-tip-box">
+        💡 <b>Presentation Tip:</b> Start the timer here, navigate to <i>Adaptive Study</i> or <i>Dashboard</i>, and watch the compact status pill smoothly track your session across every page!
+      </div>
+    </div>
+  </div>
+
   <footer>
-    <p>Emotion-Aware Adaptive Learning & Productivity System &bull; Real-Time Cognitive State Modeling &bull; Project Code: <b>2026MIN198</b></p>
+    <div class="footer-content">
+      <p>Emotion-Aware Adaptive Learning & Productivity System &bull; Real-Time Multimodal Cognitive Modeling & Adaptive Interventions</p>
+      <div class="footer-meta-pill">
+        <span class="system-status-indicator"></span>
+        <span>Cognitive Inference Pipeline: Operational</span>
+      </div>
+    </div>
   </footer>
+
+  <!-- Cross-Page Persistent Global Pomodoro Script -->
+  <script>
+    (function() {
+      // Configuration & State Keys
+      const STORAGE_KEYS = {
+        TARGET_END: 'ea_pomo_target_end',
+        REMAINING: 'ea_pomo_remaining_sec',
+        RUNNING: 'ea_pomo_is_running',
+        DURATION: 'ea_pomo_duration_min',
+        MODE: 'ea_pomo_mode',
+        DISMISSED: 'ea_pomo_dismissed'
+      };
+
+      let timerInterval = null;
+
+      function getStorage(key, fallback) {
+        try {
+          const val = localStorage.getItem(key);
+          return val !== null ? val : fallback;
+        } catch(e) {
+          return fallback;
+        }
+      }
+
+      function setStorage(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch(e) {}
+      }
+
+      function getMode() {
+        return getStorage(STORAGE_KEYS.MODE, 'focus');
+      }
+
+      function getDurationMinutes() {
+        return parseInt(getStorage(STORAGE_KEYS.DURATION, '25'), 10) || 25;
+      }
+
+      function isTimerRunning() {
+        return getStorage(STORAGE_KEYS.RUNNING, 'false') === 'true';
+      }
+
+      function calculateRemaining() {
+        if (isTimerRunning()) {
+          const targetEnd = parseInt(getStorage(STORAGE_KEYS.TARGET_END, '0'), 10);
+          const now = Date.now();
+          const rem = Math.max(0, Math.round((targetEnd - now) / 1000));
+          return rem;
+        } else {
+          return parseInt(getStorage(STORAGE_KEYS.REMAINING, String(getDurationMinutes() * 60)), 10);
+        }
+      }
+
+      function formatSeconds(sec) {
+        const m = Math.floor(sec / 60).toString().padStart(2, '0');
+        const s = (sec % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+      }
+
+      function updateAllDisplays() {
+        const remaining = calculateRemaining();
+        const formatted = formatSeconds(remaining);
+        const mode = getMode();
+        const isRunning = isTimerRunning();
+        const totalSec = getDurationMinutes() * 60;
+        const progressPct = totalSec > 0 ? Math.min(100, Math.max(0, (remaining / totalSec) * 100)) : 100;
+
+        // Modal displays
+        const modalDigits = document.getElementById('modal-timer-display');
+        if (modalDigits) modalDigits.textContent = formatted;
+
+        const modalProgressBar = document.getElementById('modal-progress-bar');
+        if (modalProgressBar) modalProgressBar.style.width = `${progressPct}%`;
+
+        const modalModeLabel = document.getElementById('modal-timer-mode-label');
+        if (modalModeLabel) {
+          modalModeLabel.textContent = mode === 'focus' ? '🎯 Deep Work Focus Block' : '☕ Restorative Break Interval';
+        }
+
+        const modalStartBtn = document.getElementById('modal-timer-start-btn');
+        if (modalStartBtn) {
+          modalStartBtn.textContent = isRunning ? 'Pause Timer' : (remaining < totalSec ? 'Resume Timer' : (mode === 'focus' ? 'Start Focus' : 'Start Break'));
+          if (isRunning) {
+            modalStartBtn.classList.remove('btn-primary');
+            modalStartBtn.classList.add('btn-secondary');
+          } else {
+            modalStartBtn.classList.add('btn-primary');
+            modalStartBtn.classList.remove('btn-secondary');
+          }
+        }
+
+        // Nav Pill display
+        const navText = document.getElementById('nav-pomo-text');
+        const navPulse = document.getElementById('nav-pomo-pulse');
+        if (navText) {
+          if (isRunning || remaining < totalSec) {
+            navText.textContent = `${mode === 'focus' ? '🎯' : '☕'} ${formatted}`;
+            if (navPulse) navPulse.style.display = isRunning ? 'inline-block' : 'none';
+          } else {
+            navText.textContent = 'Focus Timer';
+            if (navPulse) navPulse.style.display = 'none';
+          }
+        }
+
+        // Floating Compact Pill display
+        const floatingPill = document.getElementById('floating-pomo-pill');
+        const floatingTime = document.getElementById('floating-pill-time');
+        const floatingIcon = document.getElementById('floating-pill-icon');
+        const floatingPlayBtn = document.getElementById('floating-pill-play');
+
+        if (floatingPill) {
+          const isDismissed = getStorage(STORAGE_KEYS.DISMISSED, 'false') === 'true';
+          const shouldShow = (isRunning || remaining < totalSec) && !isDismissed;
+
+          if (shouldShow) {
+            floatingPill.classList.remove('hidden');
+            if (floatingTime) floatingTime.textContent = formatted;
+            if (floatingIcon) floatingIcon.textContent = mode === 'focus' ? '🎯' : '☕';
+            if (floatingPlayBtn) floatingPlayBtn.textContent = isRunning ? '⏸' : '▶';
+          } else {
+            floatingPill.classList.add('hidden');
+          }
+        }
+
+        // Dashboard sync (if dashboard card elements exist on page)
+        const dashTime = document.getElementById('timer-display');
+        const dashBtn = document.getElementById('timer-start');
+        if (dashTime) dashTime.textContent = formatted;
+        if (dashBtn) dashBtn.textContent = isRunning ? 'Pause' : (remaining < totalSec ? 'Resume Focus' : 'Start Focus');
+
+        // Check if finished
+        if (remaining <= 0 && isRunning) {
+          onTimerComplete();
+        }
+      }
+
+      function playCompletionChime() {
+        try {
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 major chord
+          notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.12);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime + idx * 0.12);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.12 + 0.6);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + idx * 0.12);
+            osc.stop(audioCtx.currentTime + idx * 0.12 + 0.6);
+          });
+        } catch(e) {}
+      }
+
+      function onTimerComplete() {
+        clearInterval(timerInterval);
+        setStorage(STORAGE_KEYS.RUNNING, 'false');
+        setStorage(STORAGE_KEYS.REMAINING, '0');
+        playCompletionChime();
+        updateAllDisplays();
+
+        const mode = getMode();
+        setTimeout(() => {
+          if (mode === 'focus') {
+            alert('🎉 Outstanding work! Your focus interval is complete. Take a 5-minute restorative stretch.');
+            setTimerMode('break', 5);
+          } else {
+            alert('🌿 Rest interval complete! Ready to start your next deep work focus block?');
+            setTimerMode('focus', 25);
+          }
+        }, 100);
+      }
+
+      window.openPomodoroModal = function(e) {
+        if (e) e.stopPropagation();
+        const modal = document.getElementById('pomodoro-modal');
+        if (modal) {
+          modal.classList.add('active');
+          updateAllDisplays();
+        }
+      };
+
+      window.closePomodoroModal = function() {
+        const modal = document.getElementById('pomodoro-modal');
+        if (modal) modal.classList.remove('active');
+      };
+
+      window.toggleGlobalTimer = function(e) {
+        if (e) e.stopPropagation();
+        setStorage(STORAGE_KEYS.DISMISSED, 'false'); // Always un-dismiss when user starts/toggles
+
+        if (isTimerRunning()) {
+          // Pause timer
+          const rem = calculateRemaining();
+          setStorage(STORAGE_KEYS.RUNNING, 'false');
+          setStorage(STORAGE_KEYS.REMAINING, String(rem));
+          clearInterval(timerInterval);
+        } else {
+          // Start or Resume timer
+          let rem = calculateRemaining();
+          if (rem <= 0) rem = getDurationMinutes() * 60;
+          const targetEnd = Date.now() + rem * 1000;
+          setStorage(STORAGE_KEYS.TARGET_END, String(targetEnd));
+          setStorage(STORAGE_KEYS.RUNNING, 'true');
+
+          clearInterval(timerInterval);
+          timerInterval = setInterval(updateAllDisplays, 1000);
+        }
+        updateAllDisplays();
+      };
+
+      window.resetGlobalTimer = function() {
+        clearInterval(timerInterval);
+        setStorage(STORAGE_KEYS.RUNNING, 'false');
+        const dur = getDurationMinutes();
+        setStorage(STORAGE_KEYS.REMAINING, String(dur * 60));
+        updateAllDisplays();
+      };
+
+      window.dismissPill = function(e) {
+        if (e) e.stopPropagation();
+        setStorage(STORAGE_KEYS.DISMISSED, 'true');
+        updateAllDisplays();
+      };
+
+      window.setTimerMode = function(mode, customMinutes) {
+        setStorage(STORAGE_KEYS.MODE, mode);
+        clearInterval(timerInterval);
+        setStorage(STORAGE_KEYS.RUNNING, 'false');
+
+        const focusTab = document.getElementById('pomo-tab-focus');
+        const breakTab = document.getElementById('pomo-tab-break');
+        const focusChips = document.getElementById('focus-preset-chips');
+        const breakChips = document.getElementById('break-preset-chips');
+
+        if (mode === 'focus') {
+          if (focusTab) focusTab.classList.add('active');
+          if (breakTab) breakTab.classList.remove('active');
+          if (focusChips) focusChips.classList.remove('hidden');
+          if (breakChips) breakChips.classList.add('hidden');
+          const minutes = customMinutes || 25;
+          setStorage(STORAGE_KEYS.DURATION, String(minutes));
+          setStorage(STORAGE_KEYS.REMAINING, String(minutes * 60));
+        } else {
+          if (focusTab) focusTab.classList.remove('active');
+          if (breakTab) breakTab.classList.add('active');
+          if (focusChips) focusChips.classList.add('hidden');
+          if (breakChips) breakChips.classList.remove('hidden');
+          const minutes = customMinutes || 5;
+          setStorage(STORAGE_KEYS.DURATION, String(minutes));
+          setStorage(STORAGE_KEYS.REMAINING, String(minutes * 60));
+        }
+        updateAllDisplays();
+      };
+
+      window.applyPresetMinutes = function(mins) {
+        setStorage(STORAGE_KEYS.DURATION, String(mins));
+        setStorage(STORAGE_KEYS.REMAINING, String(mins * 60));
+        clearInterval(timerInterval);
+        setStorage(STORAGE_KEYS.RUNNING, 'false');
+
+        // Highlight active preset chip
+        document.querySelectorAll('.pomo-preset-chip').forEach(c => {
+          if (parseInt(c.textContent, 10) === mins) c.classList.add('active');
+          else c.classList.remove('active');
+        });
+
+        updateAllDisplays();
+      };
+
+      window.applyCustomMinutes = function() {
+        const input = document.getElementById('pomo-custom-input');
+        if (!input) return;
+        const val = parseInt(input.value, 10);
+        if (val && val > 0 && val <= 180) {
+          applyPresetMinutes(val);
+          input.value = '';
+        } else {
+          alert('Please enter a valid time between 1 and 180 minutes.');
+        }
+      };
+
+      // Initialization on DOM Ready
+      document.addEventListener('DOMContentLoaded', () => {
+        if (isTimerRunning()) {
+          const rem = calculateRemaining();
+          if (rem > 0) {
+            timerInterval = setInterval(updateAllDisplays, 1000);
+          } else {
+            onTimerComplete();
+          }
+        }
+        updateAllDisplays();
+      });
+    })();
+  </script>
 
   {% block scripts %}{% endblock %}
 </body>

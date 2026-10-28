@@ -1,51 +1,53 @@
 {% extends "base.html" %}
-{% block title %}Login - Emotion-Aware Adaptive Learning{% endblock %}
+{% block title %}Sign In - Emotion-Aware Adaptive Learning & Productivity System{% endblock %}
 
 {% block content %}
 <div class="auth-wrapper">
   <div class="auth-card">
     <div class="auth-header">
-      <span style="font-size: 2.5rem;">🎓</span>
+      <div class="auth-icon-circle">
+        <span>🧠</span>
+      </div>
       <h1>Welcome Back</h1>
-      <p style="color: var(--text-muted); font-size: 0.9rem;">Sign in to monitor your cognitive state and access adaptive learning modules.</p>
+      <p class="auth-subtitle">Sign in to your account to access real-time cognitive modeling and adaptive learning modules.</p>
     </div>
 
-    <form method="post" action="{{ url_for('login') }}">
+    <form method="post" action="{{ url_for('login') }}" class="auth-form">
       <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" placeholder="learner@gmail.com" required autofocus>
+        <label for="email">Institutional or Academic Email</label>
+        <div class="input-with-icon">
+          <input type="email" id="email" name="email" placeholder="name@domain.edu" required autofocus autocomplete="email">
+        </div>
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="••••••••" required>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label for="password" style="margin-bottom: 0;">Password</label>
+        </div>
+        <div class="input-with-icon">
+          <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
       </div>
 
-      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Sign In</button>
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top: 12px; padding: 12px 20px; font-size: 0.95rem;">
+        <span>Sign In to Learning Portal</span>
+        <span style="font-size: 1.1rem; line-height: 1;">→</span>
+      </button>
     </form>
 
-    <div class="demo-credentials">
-      <p style="font-weight: 700; margin-bottom: 8px; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem;">One-Click Quick Login:</p>
-      <div style="display: flex; gap: 8px;">
-        <button type="button" class="btn btn-secondary btn-sm" style="flex: 1;" onclick="fillDemo('learner@gmail.com', '1234')">
-          👤 Demo Learner
-        </button>
-        <button type="button" class="btn btn-secondary btn-sm" style="flex: 1;" onclick="fillDemo('admin@gmail.com', '1234')">
-          🛡️ Demo Admin
-        </button>
-      </div>
+    <div class="auth-divider">
+      <span>Secure Platform Authentication</span>
     </div>
 
-    <p style="text-align: center; margin-top: 20px; font-size: 0.88rem; color: var(--text-muted);">
-      Don't have an account? <a href="{{ url_for('register') }}" style="color: var(--accent); font-weight: 600;">Create one</a>
-    </p>
+    <div class="auth-footer-notes">
+      <div class="security-badge">
+        <span>🛡️</span>
+        <span>256-bit Encrypted Cognitive Session</span>
+      </div>
+      <p style="text-align: center; margin-top: 16px; font-size: 0.88rem; color: var(--text-muted);">
+        Don't have an account? <a href="{{ url_for('register') }}" style="color: var(--accent); font-weight: 600; text-decoration: none;">Create an account</a>
+      </p>
+    </div>
   </div>
 </div>
-
-<script>
-function fillDemo(email, pwd) {
-  document.getElementById('email').value = email;
-  document.getElementById('password').value = pwd;
-}
-</script>
 {% endblock %}

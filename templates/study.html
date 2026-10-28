@@ -1,60 +1,227 @@
 {% extends "base.html" %}
-{% block title %}Adaptive Study Session - Emotion-Aware Learning (2026MIN198){% endblock %}
+{% block title %}Adaptive Assessment & Study - Emotion-Aware Learning{% endblock %}
 
 {% block content %}
-<div style="max-width: 960px; margin: 0 auto;">
+<div style="max-width: 980px; margin: 0 auto;">
 
-  <!-- Session Control Bar (Duration, Score, End Session) -->
-  <div class="card" style="margin-bottom: 16px; padding: 14px 20px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-      <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.2rem;">⏱️</span>
-          <div>
-            <span style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Live Session Duration</span>
-            <div id="session-timer-display" style="font-size: 1.15rem; font-weight: 800; font-family: monospace; color: #38bdf8;">00:00</div>
-          </div>
-        </div>
+{% if show_setup %}
+  <!-- ASSESSMENT SETUP CARD (Asks the user for number of questions and topic at the beginning) -->
+  <div class="card" style="padding: 32px; border-top: 4px solid var(--accent); box-shadow: var(--shadow-lg);">
+    <div style="text-align: center; max-width: 680px; margin: 0 auto 28px auto;">
+      <span style="font-size: 2.8rem;">🎯</span>
+      <h1 style="font-size: 1.85rem; font-weight: 800; color: var(--text-main); margin-top: 8px;">
+        Configure Your Adaptive Assessment
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 6px; line-height: 1.6;">
+        Our real-time cognitive modeling engine personalizes problem difficulty (+XP Mastery vs. Scaffolded Hints) dynamically based on your focused, stressed, or confused mental states.
+      </p>
+    </div>
 
-        <div style="height: 30px; width: 1px; background: rgba(255,255,255,0.15);"></div>
+    <form method="post" action="{{ url_for('study') }}">
+      <input type="hidden" name="action" value="start_assessment">
 
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.2rem;">⭐</span>
-          <div>
-            <span style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Session XP Score</span>
-            <div style="font-size: 1.15rem; font-weight: 800; color: #10b981;">+{{ session_score }} XP</div>
-          </div>
-        </div>
-
-        <div style="height: 30px; width: 1px; background: rgba(255,255,255,0.15);"></div>
-
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.2rem;">📝</span>
-          <div>
-            <span style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Questions Completed</span>
-            <div style="font-size: 1.15rem; font-weight: 800; color: #f8fafc;">{{ questions_answered }}</div>
-          </div>
+      <!-- Step 1: Select Curriculum Domain -->
+      <div style="margin-bottom: 26px;">
+        <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; margin-bottom: 12px; display: block;">
+          1. Select Assessment Topic
+        </label>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+          {% for t in topics %}
+            <label class="topic-select-card {% if selected_topic == t.id %}selected{% endif %}" onclick="selectTopicRadio('{{ t.id }}')">
+              <input type="radio" name="topic" value="{{ t.id }}" {% if selected_topic == t.id %}checked{% endif %} style="display: none;" id="topic-radio-{{ t.id }}">
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <span style="font-size: 1.8rem; line-height: 1;">{{ t.icon }}</span>
+                <div>
+                  <h4 style="font-size: 1rem; font-weight: 700; margin: 0; color: var(--text-main);">{{ t.name }}</h4>
+                  <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">{{ t.description }}</p>
+                </div>
+              </div>
+            </label>
+          {% endfor %}
         </div>
       </div>
 
-      <!-- End Session Button -->
-      <div>
-        <a href="{{ url_for('end_study_session') }}" class="btn btn-secondary btn-sm" onclick="return confirm('End this study session and save all progress to your permanent history?')" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(239, 68, 68, 0.3);">
-          ⏹️ End & Save Session
-        </a>
+      <!-- Step 2: Configure Number of Questions -->
+      <div style="margin-bottom: 28px;">
+        <label style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; margin-bottom: 12px; display: block;">
+          2. How Many Questions Would You Like In This Assessment?
+        </label>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px;">
+          <label class="qcount-pill-label" onclick="setQuestionCount(3)">
+            <input type="radio" name="preset_q" value="3" style="display: none;">
+            <span class="qcount-num">3</span>
+            <span class="qcount-meta">Quick Check (~3 mins)</span>
+          </label>
+
+          <label class="qcount-pill-label active" onclick="setQuestionCount(5)">
+            <input type="radio" name="preset_q" value="5" checked style="display: none;">
+            <span class="qcount-num">5</span>
+            <span class="qcount-meta">Standard (~5 mins)</span>
+          </label>
+
+          <label class="qcount-pill-label" onclick="setQuestionCount(10)">
+            <input type="radio" name="preset_q" value="10" style="display: none;">
+            <span class="qcount-num">10</span>
+            <span class="qcount-meta">Comprehensive (~10 mins)</span>
+          </label>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
+          <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-main);">Or specify custom question count:</span>
+          <input type="number" id="target_questions_input" name="target_questions" value="5" min="1" max="25" style="width: 100px; padding: 8px 12px; font-weight: 700; text-align: center; border-radius: 6px; border: 1px solid var(--border);" oninput="onCustomQInput(this.value)">
+          <span style="font-size: 0.85rem; color: var(--text-muted);">(Allowed range: 1 to 25 questions)</span>
+        </div>
       </div>
+
+      <!-- Cognitive Adaptation Engine Preview -->
+      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 16px; border-radius: 8px; margin-bottom: 24px; font-size: 0.88rem; color: #166534;">
+        <div style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <span>🧠 Real-Time Cognitive Personalization Active:</span>
+        </div>
+        <p style="margin-top: 4px; line-height: 1.5; color: #15803d;">
+          Current initial state: <b>{{ current_state }}</b>. As you answer, the system automatically shifts between foundational scaffolding and higher-difficulty challenge levels to keep you in an optimal flow state.
+        </p>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" style="padding: 14px 24px; font-size: 1.05rem; font-weight: 700;">
+        🚀 Begin Adaptive Assessment Now →
+      </button>
+    </form>
+  </div>
+
+{% elif is_completed and not submitted %}
+  <!-- ASSESSMENT COMPLETED SUMMARY REPORT -->
+  <div class="card" style="padding: 36px 24px; text-align: center; border-top: 5px solid #10b981; box-shadow: var(--shadow-lg);">
+    <span style="font-size: 3.5rem;">🏆</span>
+    <h1 style="font-size: 2rem; font-weight: 800; margin-top: 10px; color: var(--text-main);">
+      Adaptive Assessment Completed!
+    </h1>
+    <p style="color: var(--text-muted); font-size: 1rem; max-width: 600px; margin: 6px auto 24px auto;">
+      Congratulations on finishing your personalized assessment block. Here is your evaluated performance and cognitive breakdown.
+    </p>
+
+    <!-- 4 Summary KPI Cards -->
+    <div class="grid-cols-4" style="text-align: left; margin-bottom: 28px;">
+      <div class="stat-card">
+        <span class="stat-label">Questions Evaluated</span>
+        <span class="stat-value">{{ questions_answered }} / {{ target_questions }}</span>
+        <span class="stat-sub">100% of target completed</span>
+      </div>
+
+      <div class="stat-card">
+        <span class="stat-label">Accuracy Rate</span>
+        <span class="stat-value" style="color: #10b981;">
+          {{ ((correct_count / (questions_answered if questions_answered > 0 else 1)) * 100) | round | int }}%
+        </span>
+        <span class="stat-sub">{{ correct_count }} correct out of {{ questions_answered }}</span>
+      </div>
+
+      <div class="stat-card">
+        <span class="stat-label">Total Score XP</span>
+        <span class="stat-value" style="color: #3b82f6;">+{{ session_score }} XP</span>
+        <span class="stat-sub">Includes difficulty bonuses</span>
+      </div>
+
+      <div class="stat-card">
+        <span class="stat-label">Dominant State</span>
+        <div style="margin-top: 4px;">
+          <span class="state-badge {{ current_state }}" style="font-size: 0.95rem; padding: 4px 12px;">
+            ● {{ current_state }}
+          </span>
+        </div>
+        <span class="stat-sub" style="margin-top: 6px;">Adaptive state during test</span>
+      </div>
+    </div>
+
+    <!-- Recommendations & Actions -->
+    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 24px; text-align: left;">
+      <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">Pedagogical Takeaway & Next Steps:</h4>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px; line-height: 1.5;">
+        {% if current_state in ['Focused', 'Motivated'] %}
+          Outstanding focus! Your cognitive state remained in optimal flow throughout this sequence. You are well-prepared for higher-order synthesis and project work.
+        {% elif current_state == 'Confused' %}
+          Good effort! When tackling unfamiliar edge cases, remember to leverage the scaffolded breakdown and concept hints to build intuitive understanding.
+        {% else %}
+          Great perseverance completing your questions! Be sure to take a 5-minute restorative stretch break before starting your next study block.
+        {% endif %}
+      </p>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+      <a href="{{ url_for('end_study_session') }}" class="btn btn-primary" style="padding: 12px 28px; font-size: 0.98rem;">
+        💾 Save Assessment & View Dashboard →
+      </a>
+      <a href="{{ url_for('study', restart='1') }}" class="btn btn-secondary" style="padding: 12px 20px;">
+        🔄 Start New Assessment
+      </a>
     </div>
   </div>
 
-  <!-- Topic Selector -->
-  <div style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
-    {% for t in topics %}
-      <a href="{{ url_for('study', topic=t.id, state=current_state) }}"
-         class="btn {% if selected_topic == t.id %}btn-primary{% else %}btn-secondary{% endif %}"
-         style="font-size: 0.88rem;">
-        <span>{{ t.icon }}</span> {{ t.name }}
-      </a>
-    {% endfor %}
+{% else %}
+  <!-- ACTIVE ASSESSMENT IN PROGRESS -->
+
+  <!-- Session Progress & Control Bar (DURATION, SCORE, QUESTIONS ANSWERED OF TARGET) -->
+  <div class="card" style="margin-bottom: 16px; padding: 16px 20px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; border-radius: var(--radius); box-shadow: var(--shadow-md);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        <!-- Prominent Question Counter -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.3rem;">📝</span>
+          <div>
+            <span style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 0.05em;">Assessment Progress</span>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #38bdf8; display: flex; align-items: baseline; gap: 4px;">
+              <span>Question {{ (questions_answered + 1) if not submitted else questions_answered }}</span>
+              <span style="font-size: 0.88rem; color: #94a3b8; font-weight: 600;">of {{ target_questions }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="height: 32px; width: 1px; background: rgba(255,255,255,0.18);"></div>
+
+        <!-- Session Score -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.3rem;">⭐</span>
+          <div>
+            <span style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 0.05em;">Current XP</span>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #10b981;">+{{ session_score }} XP</div>
+          </div>
+        </div>
+
+        <div style="height: 32px; width: 1px; background: rgba(255,255,255,0.18);"></div>
+
+        <!-- Elapsed Duration -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.3rem;">⏱️</span>
+          <div>
+            <span style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 0.05em;">Elapsed Time</span>
+            <div id="session-timer-display" style="font-size: 1.25rem; font-weight: 800; font-family: monospace; color: #f8fafc;">00:00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div style="display: flex; gap: 8px;">
+        <a href="{{ url_for('study', restart='1') }}" class="btn btn-secondary btn-sm" onclick="return confirm('Restart assessment with a new question count?')" style="background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.2);">
+          ⚙️ Reconfigure
+        </a>
+        <a href="{{ url_for('end_study_session') }}" class="btn btn-secondary btn-sm" onclick="return confirm('End this study session and save current progress to dashboard?')" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(239, 68, 68, 0.3);">
+          ⏹️ End & Save
+        </a>
+      </div>
+    </div>
+
+    <!-- Visual Question Progress Bar -->
+    <div style="margin-top: 14px;">
+      {% set progress_pct = ((((questions_answered if not submitted else questions_answered) / target_questions) * 100) | round) %}
+      <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px;">
+        <span>Progress: {{ questions_answered }} of {{ target_questions }} answered</span>
+        <span>{{ progress_pct }}% Completed</span>
+      </div>
+      <div style="height: 6px; background: rgba(255,255,255,0.15); border-radius: 9999px; overflow: hidden;">
+        <div style="width: {{ progress_pct }}%; height: 100%; background: #38bdf8; border-radius: 9999px; transition: width 0.4s ease;"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Interactive Cognitive State Selector / Adaptation Controls -->
@@ -81,7 +248,7 @@
           </button>
         {% endif %}
         <a href="{{ url_for('activity') }}" class="btn btn-outline btn-sm">
-          📸 Re-Check Webcam
+          📸 Multimodal Check-In
         </a>
       </div>
     </div>
@@ -89,7 +256,7 @@
     <!-- Quick State Switcher for Evaluator Demonstration -->
     <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border);">
       <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
-        Interactive State Selector (Click to simulate/demonstrate real-time adaptation):
+        Interactive Cognitive State Control (Simulate Real-Time Learner States):
       </span>
       <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
         {% for s in all_states %}
@@ -109,7 +276,7 @@
     </div>
   </div>
 
-  <!-- Adapted Pedagogical Micro-Lesson Card (HIGHEST PRIORITY FEATURE) -->
+  <!-- Adapted Pedagogical Micro-Lesson Card -->
   {% if lesson %}
   <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--accent); background: #ffffff;">
     <div class="card-header" style="margin-bottom: 12px;">
@@ -128,19 +295,16 @@
       </div>
     </div>
 
-    <!-- Lesson Concept Summary -->
     <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main); margin-bottom: 14px;">
       {{ lesson.summary }}
     </p>
 
-    <!-- Code Demonstration / Visual Walkthrough -->
     {% if lesson.code_example %}
       <div style="margin-bottom: 14px;">
         <pre style="background: #0f172a; color: #f8fafc; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 0.88rem; line-height: 1.5; overflow-x: auto;">{{ lesson.code_example }}</pre>
       </div>
     {% endif %}
 
-    <!-- Key Takeaway & Recommended Action -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 10px; padding: 12px; background: #f8fafc; border-radius: 8px;">
       <div>
         <span style="font-size: 0.75rem; font-weight: 700; color: var(--accent); text-transform: uppercase;">Key Concept Takeaway:</span>
@@ -155,25 +319,34 @@
   {% endif %}
 
   <!-- Active Adaptive Quiz Question Card -->
-  <div class="card">
+  <div class="card" style="box-shadow: var(--shadow-md);">
     <div class="card-header">
       <div>
-        <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
-          Topic: {{ selected_topic | upper }} &bull; Difficulty: 
-          <span style="color: {% if question.difficulty == 'hard' %}#ef4444{% elif question.difficulty == 'medium' %}#3b82f6{% else %}#10b981{% endif %}; font-weight: 800;">
-            {{ question.difficulty | capitalize }}
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="background: #e2e8f0; color: #334155; padding: 3px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 700;">
+            Question {{ (questions_answered + 1) if not submitted else questions_answered }} of {{ target_questions }}
           </span>
-        </span>
-        <h2 style="font-size: 1.2rem; font-weight: 700; margin-top: 4px;">
-          Adaptive Checkpoint & Practice Quiz
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+            Topic: {{ selected_topic | upper }}
+          </span>
+        </div>
+
+        <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 6px;">
+          Adaptive Checkpoint Question
         </h2>
       </div>
 
-      <div>
-        <span style="background: #eff6ff; color: #1e40af; padding: 4px 12px; border-radius: 9999px; font-size: 0.82rem; font-weight: 700;">
-          {% if question.difficulty == 'hard' %}+300 XP (Mastery)
-          {% elif question.difficulty == 'medium' %}+200 XP (Standard)
-          {% else %}+100 XP (Scaffolded)
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
+          Difficulty:
+        </span>
+        <span style="padding: 4px 10px; border-radius: 6px; font-size: 0.82rem; font-weight: 700; background: {% if question.difficulty == 'hard' %}#fef2f2; color: #dc2626; border: 1px solid #fecaca;{% elif question.difficulty == 'medium' %}#eff6ff; color: #2563eb; border: 1px solid #bfdbfe;{% else %}#ecfdf5; color: #059669; border: 1px solid #a7f3d0;{% endif %}">
+          {{ question.difficulty | capitalize }}
+        </span>
+        <span style="background: #eff6ff; color: #1e40af; padding: 4px 10px; border-radius: 6px; font-size: 0.82rem; font-weight: 700;">
+          {% if question.difficulty == 'hard' %}+300 XP
+          {% elif question.difficulty == 'medium' %}+200 XP
+          {% else %}+100 XP
           {% endif %}
         </span>
       </div>
@@ -193,14 +366,14 @@
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
           {% for opt in question.options %}
-            <label style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; background: white;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='var(--border)'">
+            <label style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; background: white;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
               <input type="radio" name="selected_option" value="{{ loop.index0 }}" required style="width: 18px; height: 18px;">
               <span style="font-size: 0.95rem;"><b>{{ ['A', 'B', 'C', 'D'][loop.index0] }}.</b> {{ opt }}</span>
             </label>
           {% endfor %}
         </div>
 
-        <!-- Scaffolded Hints (Especially useful when Confused or Stressed) -->
+        <!-- Scaffolded Hints -->
         <div style="margin-bottom: 20px; border: 1px dashed var(--border); border-radius: 8px; padding: 14px; background: #fffbeb;">
           <details {% if current_state in ['Confused', 'Stressed', 'Fatigued'] %}open{% endif %}>
             <summary style="font-weight: 700; color: #b45309; cursor: pointer; font-size: 0.9rem;">
@@ -213,7 +386,7 @@
           </details>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%;">
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem; font-weight: 700;">
           Submit Answer & Evaluate
         </button>
       </form>
@@ -234,18 +407,25 @@
       </div>
 
       <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-        <a href="{{ url_for('study', topic=selected_topic, state=current_state) }}" class="btn btn-primary" style="flex: 2; min-width: 200px;">
-          Next Adaptive Question →
-        </a>
+        {% if is_completed %}
+          <a href="{{ url_for('study', topic=selected_topic) }}" class="btn btn-primary" style="flex: 2; min-width: 200px; padding: 12px; font-weight: 700;">
+            🏆 View Final Assessment Results & Analytics →
+          </a>
+        {% else %}
+          <a href="{{ url_for('study', topic=selected_topic, state=current_state) }}" class="btn btn-primary" style="flex: 2; min-width: 200px; padding: 12px; font-weight: 700;">
+            Next Adaptive Question ({{ questions_answered + 1 }} of {{ target_questions }}) →
+          </a>
+        {% endif %}
+
         <a href="{{ url_for('end_study_session') }}" class="btn btn-secondary" style="flex: 1; min-width: 140px;">
-          ⏹️ Finish Session
-        </a>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-outline" style="flex: 1; min-width: 120px;">
-          Dashboard
+          ⏹️ Finish & Save Session
         </a>
       </div>
     {% endif %}
   </div>
+
+{% endif %}
+
 </div>
 
 <!-- De-Stress Breathing Modal (4-7-8 Technique) -->
@@ -274,8 +454,28 @@
 
 {% block scripts %}
 <script>
+// Assessment Setup Script Helpers
+function selectTopicRadio(topicId) {
+  const radio = document.getElementById('topic-radio-' + topicId);
+  if (radio) radio.checked = true;
+  document.querySelectorAll('.topic-select-card').forEach(c => c.classList.remove('selected'));
+  const card = event.currentTarget;
+  if (card) card.classList.add('selected');
+}
+
+function setQuestionCount(count) {
+  const input = document.getElementById('target_questions_input');
+  if (input) input.value = count;
+  document.querySelectorAll('.qcount-pill-label').forEach(p => p.classList.remove('active'));
+  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+}
+
+function onCustomQInput(val) {
+  document.querySelectorAll('.qcount-pill-label').forEach(p => p.classList.remove('active'));
+}
+
 // Live Session Timer counter (seconds increment every 1000ms)
-let elapsedSec = {{ elapsed_sec }};
+let elapsedSec = {{ elapsed_sec | default(0) }};
 const timerEl = document.getElementById('session-timer-display');
 
 function formatElapsed(sec) {
@@ -327,7 +527,7 @@ function startBreathingCycle() {
 }
 
 // Auto-trigger modal if learner is detected in Stressed state on initial page load
-{% if current_state == 'Stressed' and not submitted %}
+{% if current_state == 'Stressed' and not submitted and not show_setup and not is_completed %}
 window.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     openDeStressModal();

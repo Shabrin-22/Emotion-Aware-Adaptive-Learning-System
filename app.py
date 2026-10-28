@@ -1,4 +1,3 @@
-﻿
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
 import sqlite3
 import os
@@ -132,11 +131,19 @@ def init_db():
 
         # Seed default accounts only when they do not already exist.
         seed_users = [
-            ("Demo Learner", "learner@gmail.com", "1234", "learner"),
-            ("Demo Admin", "admin@gmail.com", "1234", "admin"),
+            ("Student Learner", "learner@gmail.com", "1234", "learner"),
+            ("System Administrator", "admin@gmail.com", "1234", "admin"),
             ("Alex Chen", "alex@learner.edu", "1234", "learner"),
             ("Sarah Jenkins", "sarah@learner.edu", "1234", "learner")
         ]
+
+        # Sanitize any legacy demo names
+        try:
+            conn.execute("UPDATE users SET name = 'Student Learner' WHERE name = 'Demo Learner'")
+            conn.execute("UPDATE users SET name = 'System Administrator' WHERE name = 'Demo Admin'")
+            conn.commit()
+        except Exception:
+            pass
 
         for name, email, pwd, role in seed_users:
             existing = conn.execute(
@@ -502,6 +509,18 @@ def dashboard():
         if total_quiz_attempts > 0 else 0
     )
 
+    # Prepare timeline session trend data for the modern analytics visualization
+    session_trend = []
+    for s in reversed(study_sessions[:8]):
+        session_trend.append({
+            "topic": s["topic"].split("&")[0].strip(),
+            "score": s["score"],
+            "state": s["dominant_state"],
+            "questions": s["total_questions"],
+            "duration": s["duration_seconds"],
+            "date": s["created_at"].split()[0] if s["created_at"] else ""
+        })
+
     return render_template(
         "dashboard.html",
         activities=activities,
@@ -513,7 +532,8 @@ def dashboard():
         total_study_seconds=total_study_seconds,
         total_sessions_completed=total_sessions_completed,
         total_quiz_attempts=total_quiz_attempts,
-        quiz_accuracy=quiz_accuracy
+        quiz_accuracy=quiz_accuracy,
+        session_trend=session_trend
     )
 
 
@@ -738,25 +758,47 @@ def study():
         return redirect(url_for("login"))
 
     user_id = session["user_id"]
-    topic_id = request.args.get("topic", "python")
+
+    # Check for start of a new assessment or explicit configuration
+    show_setup = False
+    requested_topic = request.args.get("topic") or request.form.get("topic")
+    topic_id = requested_topic if requested_topic in [t["id"] for t in TOPICS] else session.get("study_session_topic", "python")
 
     topic_obj = next(
         (topic for topic in TOPICS if topic["id"] == topic_id),
         TOPICS[0]
     )
 
-    if (
-        "study_session_start" not in session
-        or request.args.get("restart") == "1"
-    ):
+    # Check if user submitted the Assessment Setup form
+    if request.method == "POST" and request.form.get("action") == "start_assessment":
+        try:
+            target_q = int(request.form.get("target_questions", 5))
+            target_q = max(1, min(25, target_q))
+        except (ValueError, TypeError):
+            target_q = 5
+
+        chosen_topic = request.form.get("topic", topic_id)
+        session["study_target_questions"] = target_q
+        session["study_session_topic"] = chosen_topic
         session["study_session_start"] = datetime.now().isoformat()
-        session["study_session_topic"] = topic_id
         session["study_questions_answered"] = 0
         session["study_score"] = 0
+        session["study_correct_count"] = 0
         session["study_states_seen"] = []
+        session["study_completed"] = False
+        topic_id = chosen_topic
+        topic_obj = next((t for t in TOPICS if t["id"] == topic_id), TOPICS[0])
 
+    # If user wants to reset or setup has not been performed yet
+    elif (
+        request.args.get("setup") == "1"
+        or request.args.get("restart") == "1"
+        or "study_target_questions" not in session
+    ):
+        show_setup = True
+
+    # Modeled Cognitive State Resolution
     param_state = request.args.get("state")
-
     if param_state and param_state in ALL_STATES:
         current_state = param_state
         session["current_cognitive_state"] = current_state
@@ -773,8 +815,7 @@ def study():
                 """,
                 (
                     user_id,
-                    f"State adapted to {current_state} during "
-                    f"{topic_obj['name']} session.",
+                    f"State adapted to {current_state} during {topic_obj['name']} session.",
                     current_state,
                     92.0,
                     RECOMMENDATIONS.get(current_state, "")
@@ -786,7 +827,6 @@ def study():
 
     elif "current_cognitive_state" in session:
         current_state = session["current_cognitive_state"]
-
     else:
         conn = get_db()
         try:
@@ -805,9 +845,52 @@ def study():
         )
         session["current_cognitive_state"] = current_state
 
+    # If setup mode is active, render the setup card immediately
+    if show_setup:
+        intervention = get_adaptive_intervention(current_state, 88.0)
+        return render_template(
+            "study.html",
+            show_setup=True,
+            topics=TOPICS,
+            selected_topic=topic_id,
+            current_state=current_state,
+            all_states=ALL_STATES,
+            intervention=intervention,
+            target_questions=session.get("study_target_questions", 5)
+        )
+
     states_seen = session.get("study_states_seen", [])
     states_seen.append(current_state)
     session["study_states_seen"] = states_seen
+
+    target_questions = session.get("study_target_questions", 5)
+    questions_answered = session.get("study_questions_answered", 0)
+
+    start_dt = datetime.fromisoformat(
+        session.get("study_session_start", datetime.now().isoformat())
+    )
+    elapsed_sec = int((datetime.now() - start_dt).total_seconds())
+
+    # Check if assessment is already completed and user refreshed or ended
+    if questions_answered >= target_questions and request.method == "GET" and not request.args.get("state"):
+        intervention = get_adaptive_intervention(current_state, 88.0)
+        lesson = get_adaptive_lesson(topic_id, current_state)
+        return render_template(
+            "study.html",
+            show_setup=False,
+            is_completed=True,
+            topics=TOPICS,
+            selected_topic=topic_id,
+            current_state=current_state,
+            all_states=ALL_STATES,
+            intervention=intervention,
+            lesson=lesson,
+            elapsed_sec=elapsed_sec,
+            session_score=session.get("study_score", 0),
+            questions_answered=questions_answered,
+            target_questions=target_questions,
+            correct_count=session.get("study_correct_count", 0)
+        )
 
     conn = get_db()
 
@@ -891,6 +974,9 @@ def study():
                 answered = session.get("study_questions_answered", 0) + 1
                 session["study_questions_answered"] = answered
 
+                if is_correct:
+                    session["study_correct_count"] = session.get("study_correct_count", 0) + 1
+
                 points = (
                     100 if matched_q["difficulty"] == "easy"
                     else 200 if matched_q["difficulty"] == "medium"
@@ -919,8 +1005,12 @@ def study():
                     topic_id, current_state_input
                 )
 
+                is_completed = (answered >= target_questions)
+
                 return render_template(
                     "study.html",
+                    show_setup=False,
+                    is_completed=is_completed,
                     topics=TOPICS,
                     selected_topic=topic_id,
                     current_state=current_state_input,
@@ -933,9 +1023,9 @@ def study():
                     lesson=lesson,
                     elapsed_sec=elapsed_sec,
                     session_score=session.get("study_score", 0),
-                    questions_answered=session.get(
-                        "study_questions_answered", 1
-                    )
+                    questions_answered=answered,
+                    target_questions=target_questions,
+                    correct_count=session.get("study_correct_count", 0)
                 )
 
         next_question, difficulty = select_adaptive_question(
@@ -959,13 +1049,10 @@ def study():
     intervention = get_adaptive_intervention(current_state, 88.0)
     lesson = get_adaptive_lesson(topic_id, current_state)
 
-    start_dt = datetime.fromisoformat(
-        session.get("study_session_start", datetime.now().isoformat())
-    )
-    elapsed_sec = int((datetime.now() - start_dt).total_seconds())
-
     return render_template(
         "study.html",
+        show_setup=False,
+        is_completed=False,
         topics=TOPICS,
         selected_topic=topic_id,
         current_state=current_state,
@@ -977,7 +1064,9 @@ def study():
         lesson=lesson,
         elapsed_sec=elapsed_sec,
         session_score=session.get("study_score", 0),
-        questions_answered=session.get("study_questions_answered", 0)
+        questions_answered=session.get("study_questions_answered", 0),
+        target_questions=target_questions,
+        correct_count=session.get("study_correct_count", 0)
     )
 
 
@@ -1040,14 +1129,17 @@ def end_study_session():
         "study_session_topic",
         "study_questions_answered",
         "study_score",
-        "study_states_seen"
+        "study_correct_count",
+        "study_states_seen",
+        "study_target_questions",
+        "study_completed"
     ):
         session.pop(key, None)
 
     flash(
-        "ðŸŽ‰ Study session ended successfully! "
+        "🎉 Adaptive Assessment completed and saved! "
         f"Duration: {format_duration(duration_seconds)} | "
-        f"Questions: {total_questions} | Score: {score} XP | "
+        f"Questions: {total_questions} | Score: +{score} XP | "
         f"Dominant State: {dominant_state}"
     )
 
