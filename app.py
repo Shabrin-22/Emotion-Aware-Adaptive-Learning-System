@@ -1,4 +1,4 @@
-
+﻿
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
 import sqlite3
 import os
@@ -14,6 +14,7 @@ from adaptive_engine import (
     TOPICS, QUESTION_BANK, select_adaptive_question,
     get_adaptive_intervention, get_adaptive_lesson, get_questions_for_topic
 )
+
 
 app = Flask(__name__)
 app.secret_key = os.environ.get(
@@ -1044,7 +1045,7 @@ def end_study_session():
         session.pop(key, None)
 
     flash(
-        "🎉 Study session ended successfully! "
+        "ðŸŽ‰ Study session ended successfully! "
         f"Duration: {format_duration(duration_seconds)} | "
         f"Questions: {total_questions} | Score: {score} XP | "
         f"Dominant State: {dominant_state}"
