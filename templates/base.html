@@ -72,25 +72,6 @@
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Non-intrusive Persistent Floating Pomodoro Pill (Visible across all pages once active) -->
-  <div id="floating-pomo-pill" class="floating-pomo-pill hidden" aria-live="polite">
-    <div class="pomo-pill-drag-area" onclick="openPomodoroModal()" title="Open Timer Configuration">
-      <span class="pomo-active-dot"></span>
-      <span id="floating-pill-icon">🎯</span>
-      <span id="floating-pill-time" class="pomo-pill-digits">25:00</span>
-    </div>
-    <div class="pomo-pill-actions">
-      <button type="button" class="pomo-icon-btn" id="floating-pill-play" onclick="toggleGlobalTimer(event)" title="Pause / Resume Timer">
-        ⏸
-      </button>
-      <button type="button" class="pomo-icon-btn" onclick="openPomodoroModal(event)" title="Configure Time & Modes">
-        ⚙️
-      </button>
-      <button type="button" class="pomo-icon-btn" onclick="dismissPill(event)" title="Hide Widget">
-        ✕
-      </button>
-    </div>
-  </div>
 
   <!-- Configurable Pomodoro Modal / Popover -->
   <div class="modal-overlay" id="pomodoro-modal" onclick="if(event.target === this) closePomodoroModal()">
@@ -283,32 +264,6 @@
           }
         }
 
-        // Floating Compact Pill display
-        const floatingPill = document.getElementById('floating-pomo-pill');
-        const floatingTime = document.getElementById('floating-pill-time');
-        const floatingIcon = document.getElementById('floating-pill-icon');
-        const floatingPlayBtn = document.getElementById('floating-pill-play');
-
-        if (floatingPill) {
-          const isDismissed = getStorage(STORAGE_KEYS.DISMISSED, 'false') === 'true';
-          const shouldShow = (isRunning || remaining < totalSec) && !isDismissed;
-
-          if (shouldShow) {
-            floatingPill.classList.remove('hidden');
-            if (floatingTime) floatingTime.textContent = formatted;
-            if (floatingIcon) floatingIcon.textContent = mode === 'focus' ? '🎯' : '☕';
-            if (floatingPlayBtn) floatingPlayBtn.textContent = isRunning ? '⏸' : '▶';
-          } else {
-            floatingPill.classList.add('hidden');
-          }
-        }
-
-        // Dashboard sync (if dashboard card elements exist on page)
-        const dashTime = document.getElementById('timer-display');
-        const dashBtn = document.getElementById('timer-start');
-        if (dashTime) dashTime.textContent = formatted;
-        if (dashBtn) dashBtn.textContent = isRunning ? 'Pause' : (remaining < totalSec ? 'Resume Focus' : 'Start Focus');
-
         // Check if finished
         if (remaining <= 0 && isRunning) {
           onTimerComplete();
@@ -399,11 +354,6 @@
         updateAllDisplays();
       };
 
-      window.dismissPill = function(e) {
-        if (e) e.stopPropagation();
-        setStorage(STORAGE_KEYS.DISMISSED, 'true');
-        updateAllDisplays();
-      };
 
       window.setTimerMode = function(mode, customMinutes) {
         setStorage(STORAGE_KEYS.MODE, mode);
