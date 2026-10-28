@@ -1,1 +1,8 @@
 
+Flask
+numpy
+pandas
+scikit-learn
+opencv-python-headless
+requests
+python-dotenv
